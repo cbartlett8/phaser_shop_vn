@@ -7,8 +7,8 @@ Basically this little game will flow like this:
   1. Brew Coffie.
   2. Turn on the Lights.
   3. Unlock the front door.
+  
 -People mill about the store until they come up to the register to:
-
   1. Buy things.
   2. Ask a question.
   
