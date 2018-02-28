@@ -3,6 +3,8 @@
 <head> 
 	<meta charset="UTF-8" />
 	<title>Phaser - Making your first game, part 2</title>
+    <script src="assets/cb_generic_text_box.js"></script>
+    <script src="assets/helper.js"></script>
     <script src="assets/phaser_2_10_0.min.js"></script>
     <style type="text/css">
         body {
@@ -15,6 +17,83 @@
 <script type="text/javascript">
 
 var game = new Phaser.Game(800, 600, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
+
+var player_name = "Chris"; // Just the default name the Actors will call the player.
+var actor_pos_x = game.width / 2;
+var actor_pos_y = game.height / 2;
+var textbox_pos_x = 0;
+var textbox_pos_y = (game.height / 3) * 2;
+
+// Generic Class for the Actors that the player will be interacting with in the game.
+// They have an entrance str, exit str, and favorite saying, then the strings that
+// will hold their dialog.
+// Every Actor will have sprites assicaited with them, be it a happy, sad, angry, confused, flustered.
+// When the actor is created they are displayed to the screen as the player is interacting with them.
+// When the player is done talking to them they are distroyed.
+class Actor
+{
+  constructor(entry_str, exit_str, saying_str, string_array, spritesheet)
+  {
+    // dialog
+    this.m_str_entry = entry_str;
+    this.m_str_exit = exit_str;
+    this.m_str_saying = saying_str;
+    this.m_str_array = string_array;
+    
+    // sprites
+    this.m_spritesheet_name = spritesheet;
+    
+    // sprite setup
+    this.m_actor_sprite = game.add.sprite(actor_pos_x, actor_pos_y, this.m_spritesheet_name);
+    this.m_actor_sprite.animations.add('idle', [0,1,2,3], 30, true);
+    this.m_actor_sprite.animations.add('happy', [1,2,3,4], 30, true);
+    this.m_actor_sprite.animations.add('sad', [2,3,4,5], 30, true);
+    this.m_actor_sprite.animations.add('angry', [3,4,5,6], 30, true);
+    this.m_actor_sprite.animations.add('confused', [4,5,6,7], 30, true);
+    this.m_actor_sprite.animations.add('flustered', [5,6,7,8], 30, true);
+    
+    this.m_actor_sprite.animations.play('idle');
+    
+    // Display the dialog object.
+    this.m_textbox = new GenericTextBox(game, textbox_x, textbox_y)
+  }
+  
+  advanceText()
+  {
+    
+  }
+  
+  destroy()
+  {
+    
+  }
+}
+
+// Here is just a generic class that keeps track of the current button states.
+class Button
+{
+  constructor()
+  {
+    this.m_state = false;
+  }
+  
+  getState()
+  {
+    return this.m_state;
+  }
+  
+  updateState(state)
+  {
+    this.m_state = state;
+  }
+}
+
+// Button states
+var button_left = new Button();
+var button_right = new Button();
+var button_up = new Button();
+var button_down = new Button();
+var button_space = new Button();
 
 function preload() {
 
