@@ -23,6 +23,14 @@ var actor_pos_x = game.width / 2;
 var actor_pos_y = game.height / 2;
 var textbox_pos_x = 0;
 var textbox_pos_y = (game.height / 3) * 2;
+var actor = null;
+var dialog_array = [];
+var background_group = null;
+var middle_group = null;
+var front_group = null;
+var hud_group = null;
+var cursors = null;
+var space_key = null; 
 
 // Generic Class for the Actors that the player will be interacting with in the game.
 // They have an entrance str, exit str, and favorite saying, then the strings that
@@ -32,13 +40,23 @@ var textbox_pos_y = (game.height / 3) * 2;
 // When the player is done talking to them they are distroyed.
 class Actor
 {
-  constructor(entry_str, exit_str, saying_str, string_array, spritesheet)
+  constructor(game, entry_str, exit_str, saying_str, string_array, spritesheet)
   {
+    this.m_game = game;
+    //game.add.sprite(0,0,'textbox');
+    
+    if (game == null)
+    {
+     console.error("ERROR::Actor:constructor: game is null?");
+     return; 
+    }
+    
     // dialog
     this.m_str_entry = entry_str;
     this.m_str_exit = exit_str;
     this.m_str_saying = saying_str;
     this.m_str_array = string_array;
+    
     
     // sprites
     this.m_spritesheet_name = spritesheet;
@@ -55,17 +73,18 @@ class Actor
     this.m_actor_sprite.animations.play('idle');
     
     // Display the dialog object.
-    this.m_textbox = new GenericTextBox(game, textbox_x, textbox_y)
+    this.m_textbox = new GenericTextBox(this.m_game, textbox_pos_x, textbox_pos_y,
+      3, dialog_array, 3,100);
   }
   
   advanceText()
   {
-    
+    this.m_textbox.advanceText();
   }
   
   destroy()
   {
-    
+    dialog_array.length = 0;
   }
 }
 
@@ -95,20 +114,114 @@ var button_up = new Button();
 var button_down = new Button();
 var button_space = new Button();
 
+var script_loader = null;
+var loading_text = null;
+
+function loadStart()
+{
+  game.load.image('sky', 'assets/sky.png');
+  game.load.image('ground', 'assets/platform.png');
+  game.load.image('star', 'assets/star.png');
+  game.load.image('actor', 'assets/actor.png');
+  game.load.image('textbox', 'assets/textbox.png');
+  game.load.text('script', 'assets/irene/script_1.txt');
+  game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
+}
+
+function fileComplete(progress, cacheKey, success, totalLoaded, totalFiles)
+{
+  loading_text.setText("File Complete: " + progress + "% - " + totalLoaded + " out of " + totalFiles);
+}
+
+function loadComplete()
+{
+  loading_text.text = "";
+}
+
 function preload() {
 
-    game.load.image('sky', 'assets/sky.png');
-    game.load.image('ground', 'assets/platform.png');
-    game.load.image('star', 'assets/star.png');
-    game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
-
+    game.load.onLoadStart.add(loadStart, this);
+    game.load.onFileComplete.add(fileComplete, this);
+    game.load.onLoadComplete.add(loadComplete, this);
+    game.load.image('__missing', 'assets/missing.png');
+    
+    loading_text = game.add.text(32, 32, 
+      'Loading...', { fill: '#ffffff' });
+    
+    var array_1 = [];
+    array_1.push("Unknown Woman");
+    array_1.push("\"My Goodness, you must be " + player_name + ".");
+    array_1.push("Pleasure to meet you.");
+    array_1.push("You may call me Silkie.\"");
+    dialog_array.push(array_1);
+    dialog_array.push("This is dialog");
+    
+    cursors = game.input.keyboard.createCursorKeys();
+    
+    //script_loader = game.load.text("script", 'assets/script.txt');
+    
 }
 
 function create() {
-  game.add.sprite(0,0,'sky');
+  //game.add.sprite(0,0,'sky');
+  
+  // Creating the Actor
+  actor = new Actor(game, "Entry Text", "Exit Text", "Nindo", dialog_array, 'dude');
+  
+  space_key = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+  //actor.advanceText();
+  
+  //game.add.sprite(0,0,'textbox');
+    
+  
 }
 
 function update() {
+  
+  if (cursors.left.isDown)
+  {
+    if (button_left.getState() == false)
+    {
+      button_left.updateState(true);
+    }
+  }
+  else if (cursors.right.isDown)
+  {
+    if (button_right.getState() == false)
+    {
+      button_right.updateState(true);
+    }
+  }
+  else if (cursors.up.isDown)
+  {
+    if (button_up.getState() == false)
+    {
+      button_up.updateState(true);
+    }
+  }
+  else if (cursors.down.isDown)
+  {
+    if (button_down.getState() == false)
+    {
+      button_down.updateState(true);
+    }
+  }
+  else if (space_key.isDown)
+  {
+    if (button_space.getState() == false)
+    {
+      button_space.updateState(true);
+      actor.advanceText();
+    }
+  }
+  else
+  {
+    button_left.updateState(false);
+    button_right.updateState(false);
+    button_up.updateState(false);
+    button_down.updateState(false);
+    button_space.updateState(false);
+  }
 }
 
 </script>

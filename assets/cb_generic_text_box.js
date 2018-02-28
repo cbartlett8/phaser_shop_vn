@@ -25,6 +25,8 @@ class GenericTextBox
 	 */
 	constructor(game, p_x, p_y, position, dialog_array, border_id, text_size)
 	{
+    let error_str = "ERROR::GenericTextBox:constructor";
+    
     console.log("GenericTextBox is being created.");
     this.m_game_obj = game;
 		this.m_indent = 10;
@@ -44,10 +46,18 @@ class GenericTextBox
     this.m_dialog_array_current_position = 0;
     this.m_num_of_text_lines = 5;
 		
-		if (position <= 0 || position >= 4)
+    if (game == null)
+    { console.error(error_str + "game is null."); return;}
+    //this.m_game_obj.add.sprite(0,0,'textbox');
+    
+    if (!testVarValidity(p_x, 'number', -1, 1000, error_str))
+    { console.error("p_x is wrong: " + p_x); return; }
+    if (!testVarValidity(p_y, 'number', -1, 1000, error_str))
+    { console.error("p_y is wrong: " + p_y); return; }
+    
+		if (!testVarValidity(position, 'number', 0, 4, error_str))
 		{
-			console.log('ERROR::GenericTextBox:construtcor' + 
-				'location is out of scope: ' + location);
+      console.error('location is out of scope: ' + location);
 			return;
 		}
 		this.m_position = position;
@@ -60,14 +70,16 @@ class GenericTextBox
 				break;
 			case 2: // middle
 				this.m_x = 0;
-				this.m_y = 200;
+				this.m_y = this.m_game_obj.height / 2 - (100);
 				break;
 			case 3: // bottom
 				this.m_x = 0;
-				this.m_y = 400;
+				this.m_y = (this.m_game_obj.height / 3) * 2;
 				break;
 			default:
 				console.log("ERROR::position not recognized: " + position);
+        this.m_x = 0;
+        this.m_y = 0;
 		}
 		
 		if (dialog_array == 'undefined')
@@ -84,30 +96,30 @@ class GenericTextBox
     this.m_dialog_array = dialog_array;
 		
 		
-		if (border_id < 0)
+		if (!testVarValidity(border_id, 'number', 0, 4, error_str))
 		{
-			console.log('ERROR::GenericTextBox:constructor:' + 
-				'border_id is out of scope: ' + border_id);
+      console.error('border_id is out of scope: ' + border_id);
 			return;
 		}
     
 		this.m_border_id = border_id;
-    this.m_border = game.add.sprite(this.m_player_x + this.m_x, this.m_player_y + this.m_y, 'dialog_box');
+    //this.m_border = this.m_game_obj.add.sprite(this.m_player_x + this.m_x, this.m_player_y + this.m_y, 'textbox');
+    this.m_border = this.m_game_obj.add.sprite(this.m_player_x+this.m_x, this.m_y,'textbox');
        
     this.m_text_1 = game.add.text(this.m_player_x + this.m_x + this.m_indent, 
-        this.m_player_y + this.m_y + this.m_line_spacing,
+        this.m_y + this.m_line_spacing,
         this.m_text, {fontSize: '16px', fill: '#000'});
     this.m_text_2 = game.add.text(this.m_player_x + this.m_x + this.m_main_indent, 
-        this.m_player_y + this.m_y + this.m_line_spacing*2, 
+        this.m_y + this.m_line_spacing*2, 
         this.m_text, {fontSize: '16px', fill: '#000'});
     this.m_text_3 = game.add.text(this.m_player_x + this.m_x + this.m_main_indent, 
-        this.m_player_y + this.m_y + this.m_line_spacing*3,
+        this.m_y + this.m_line_spacing*3,
         this.m_text, {fontSize: '16px', fill: '#000'});
     this.m_text_4 = game.add.text(this.m_player_x + this.m_x + this.m_main_indent, 
-        this.m_player_y + this.m_y + this.m_line_spacing*4, 
+        this.m_y + this.m_line_spacing*4, 
         this.m_text, {fontSize: '16px', fill: '#000'});
     this.m_text_5 = game.add.text(this.m_player_x + this.m_x + this.m_main_indent, 
-        this.m_player_y + this.m_y + this.m_line_spacing*5, 
+        this.m_y + this.m_line_spacing*5, 
         this.m_text, {fontSize: '16px', fill: '#000'});
         
     // add the text objects to the text_array
@@ -116,20 +128,14 @@ class GenericTextBox
     this.m_text_array.push(this.m_text_3);
     this.m_text_array.push(this.m_text_4);
     this.m_text_array.push(this.m_text_5);
-
-        /* here we would create the strings from the game object.
-		for (var i = 1; i < this.m_dialog_array[i].length; i++)
-		{
-			this.m_text_displayed = game.add.text(this.m_loc_x, this.m_loc_y, 
-			this.m_text, { fontSize: '16px', fill: '#000' });
-		}
-        */
+    
+    console.log("Successfully created GenericTextBox obj");
 	}
 
     /*
      Typically called after the button press from the main game. 
     */
-    advance_text()
+    advanceText()
     {
         if (this.m_dialog_array == 'undefined')
         {
@@ -177,7 +183,7 @@ class GenericTextBox
     Checks to see if there is more text to be displayed to the screen.
     @return true or false 
     */
-    more_text()
+    moreText()
     {
     }
 
