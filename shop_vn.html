@@ -5,7 +5,7 @@
 	<title>Phaser - Making your first game, part 2</title>
     <script src="assets/cb_generic_text_box.js"></script>
     <script src="assets/helper.js"></script>
-    <script src="assets/phaser_2_10_0.min.js"></script>
+    <script src="assets/phaser_2_10_0.js"></script>
     <style type="text/css">
         body {
             margin: 0;
@@ -61,12 +61,14 @@ function fileComplete(progress, cacheKey, success, totalLoaded, totalFiles)
 function loadComplete()
 {
   loading_text.text = "Load Complete.";
+  console.log("Load Complete called.");
   load_complete = true;
   //loading_text.destroy;
+  //game.state.start('game');
 }
 
 var bootState = {
-  create: function()
+  preload: function()
   {
     console.log("Boot State.");
     // loading the text files.
@@ -77,15 +79,18 @@ var bootState = {
 };
 
 var loadState = {
-  create: function()
+  preload: function()
   {
+    loading_text = game.add.text(32, 32, 
+      'Loading...', { fill: '#ffffff' });
+
     console.log("Load State.");
     game.load.image('__missing', 'assets/missing.png');
     
-    //game.load.onLoadStart.add(loadStart, this);
-    //game.load.onFileComplete.add(fileComplete, this);
-    //game.load.onLoadComplete.add(loadComplete, this);
-    
+    game.load.onLoadStart.add(loadStart, this);
+    game.load.onFileComplete.add(fileComplete, this);
+    game.load.onLoadComplete.add(loadComplete, this);
+   /* 
     game.load.image('sky', 'assets/sky.png');
     game.load.image('ground', 'assets/platform.png');
     game.load.image('star', 'assets/star.png');
@@ -93,21 +98,31 @@ var loadState = {
     game.load.image('textbox', 'assets/textbox.png');
     //game.load.text('script', 'assets/irene/script_1.txt');
     game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
-    
-    game.state.start('game');
+  */  
+    //game.state.start('game');
+  },
+  create()
+  {
+    console.log("loadState:create: " + game.load.progress);
+  },
+  update()
+  {
+    //console.log("loadState:update");
+    //console.log("loadState:progress: " + game.load.progress);
+    if (game.cache.getText('script') != null)
+    { console.log("Finished loading?"); game.state.start('game'); }
   }
 };
 
-
-
-
-
-/* Generic Class for the Actors that the player will be interacting with in the game.
-// They have an entrance str, exit str, and favorite saying, then the strings that
-// will hold their dialog.
-// Every Actor will have sprites assicaited with them, be it a happy, sad, angry, confused, flustered.
-// When the actor is created they are displayed to the screen as the player is interacting with them.
-// When the player is done talking to them they are distroyed.
+/* 
+ Generic Class for the Actors that the player will be interacting with in the game.
+ They have an entrance str, exit str, and favorite saying, then the strings that
+  will hold their dialog.
+ Every Actor will have sprites assicaited with them, be it a happy, sad, 
+  angry, confused, flustered.
+ When the actor is created they are displayed to the screen as the player is 
+  interacting with them.
+ When the player is done talking to them they are distroyed.
   param game * = The game instance
   param script_handle file_handle = The file cashed into memory of the browsers handle.
   param string_array [] = The array that will hold the string data.
@@ -243,7 +258,7 @@ var button_space = new Button();
 */
 function parseTextCashe(name)
 {
-  var text = game.cashe.getText(name);
+  var text = game.cache.getText(name);
   var str = "";
   var array = [];
   
@@ -271,11 +286,15 @@ var gameState = {
   
   preload() 
   {
-    
-    
-    
-    loading_text = game.add.text(32, 32, 
-      'Loading...', { fill: '#ffffff' });
+    console.log("gameState:start");
+    if (loading_text != null)
+    {
+      loading_text.text = "gameState:Done Loading?"; 
+    }
+    else
+    {
+      console.log("gameState:loading_text is not init?");
+    }
     
     var array_1 = [];
     array_1.push("Unknown Woman");
@@ -293,8 +312,9 @@ var gameState = {
 
   create() 
   {
-    while(1)
-    {
+    console.log("gameState:create");
+    //while(load_complete == false)
+    //{
       if (load_complete == true)
       {
         console.log("load_complete: " + load_complete);
@@ -302,14 +322,18 @@ var gameState = {
         actor = new Actor(game, "Entry Text", "Exit Text", "Nindo", 'script', dialog_array, 'dude');
   
         space_key = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
-        break;
       }
-    } 
+      else
+      {
+        console.log("load_complete is not true?");
+      }
+    //}
   },
 
   update() 
   {
-  
+ 
+  //console.log("gameState:update"); 
   if (cursors.left.isDown)
   {
     if (button_left.getState() == false)
@@ -338,7 +362,7 @@ var gameState = {
       button_down.updateState(true);
     }
   }
-  else if (space_key.isDown)
+  else if (space_key != null && space_key.isDown)
   {
     if (button_space.getState() == false)
     {
