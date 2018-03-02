@@ -16,7 +16,7 @@
 
 <script type="text/javascript">
 
-var game = new Phaser.Game(800, 600, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
+var game = new Phaser.Game(800, 600, Phaser.CANVAS, '');//, { preload: preload, create: create, update: update });
 
 var player_name = "Chris"; // Just the default name the Actors will call the player.
 var actor_pos_x = game.width / 2;
@@ -31,16 +31,93 @@ var front_group = null;
 var hud_group = null;
 var cursors = null;
 var space_key = null; 
+var load_complete = false;
+var script_loader = null;
+var loading_text = null;
 
-// Generic Class for the Actors that the player will be interacting with in the game.
+function loadStart()
+{
+  console.log("loadStart Starting...");
+  game.load.image('sky', 'assets/sky.png');
+  game.load.image('ground', 'assets/platform.png');
+  game.load.image('star', 'assets/star.png');
+  game.load.image('actor', 'assets/actor.png');
+  game.load.image('textbox', 'assets/textbox.png');
+  //game.load.text('script', 'assets/irene/script_1.txt');
+  game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
+}
+
+function fileComplete(progress, cacheKey, success, totalLoaded, totalFiles)
+{
+  loading_text.setText("File Complete: " + progress + "% - " + totalLoaded + " out of " + totalFiles);
+  /*
+  if (totalLoaded == totalFiles)
+  {
+    load_complete=true;
+  }
+  */
+}
+
+function loadComplete()
+{
+  loading_text.text = "Load Complete.";
+  load_complete = true;
+  //loading_text.destroy;
+}
+
+var bootState = {
+  create: function()
+  {
+    console.log("Boot State.");
+    // loading the text files.
+    game.load.text('script', 'assets/irene/script_1.txt');
+    
+    game.state.start('load');
+  }
+};
+
+var loadState = {
+  create: function()
+  {
+    console.log("Load State.");
+    game.load.image('__missing', 'assets/missing.png');
+    
+    //game.load.onLoadStart.add(loadStart, this);
+    //game.load.onFileComplete.add(fileComplete, this);
+    //game.load.onLoadComplete.add(loadComplete, this);
+    
+    game.load.image('sky', 'assets/sky.png');
+    game.load.image('ground', 'assets/platform.png');
+    game.load.image('star', 'assets/star.png');
+    game.load.image('actor', 'assets/actor.png');
+    game.load.image('textbox', 'assets/textbox.png');
+    //game.load.text('script', 'assets/irene/script_1.txt');
+    game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
+    
+    game.state.start('game');
+  }
+};
+
+
+
+
+
+/* Generic Class for the Actors that the player will be interacting with in the game.
 // They have an entrance str, exit str, and favorite saying, then the strings that
 // will hold their dialog.
 // Every Actor will have sprites assicaited with them, be it a happy, sad, angry, confused, flustered.
 // When the actor is created they are displayed to the screen as the player is interacting with them.
 // When the player is done talking to them they are distroyed.
+  param game * = The game instance
+  param script_handle file_handle = The file cashed into memory of the browsers handle.
+  param string_array [] = The array that will hold the string data.
+  param spritesheet sprite_handle = The name of the sprite handle we are
+    instantiaing.
+*/
 class Actor
 {
-  constructor(game, entry_str, exit_str, saying_str, string_array, spritesheet)
+  constructor(game, entry_str, exit_str, saying_str, script_handle, 
+    string_array, spritesheet)
   {
     this.m_game = game;
     //game.add.sprite(0,0,'textbox');
@@ -72,19 +149,62 @@ class Actor
     
     this.m_actor_sprite.animations.play('idle');
     
+    parseTextCashe(script_handle);
+    
     // Display the dialog object.
     this.m_textbox = new GenericTextBox(this.m_game, textbox_pos_x, textbox_pos_y,
       3, dialog_array, 3,100);
+      
+    // BETA TESTING ONLY HERE!!!!
+    this.m_actions_array = [];
+    this.m_actions_array.length = 100;
+    this.m_actions_array.fill(0);
+    
+    this.m_action_counter = 0;
+    
   }
   
   advanceText()
   {
     this.m_textbox.advanceText();
+    this.m_action_counter += 1;
+    
+    if (this.m_actions_array[this.m_action_counter] != 0)
+    {
+      this.m_actor_sprite.animations.stop();
+      // We have to change the emotion state of the actor to the new
+      // state.
+      switch(this.m_actions_array[this.m_action_counter])
+      {
+        case 0:
+          this.m_actor_sprite.animations.play('idle');
+          break;
+        case 1:
+          this.m_actor_sprite.animations.play('happy');
+          break;
+        case 2:
+          this.m_actor_sprite.animations.play('sad');
+          break;
+        case 3:
+          this.m_actor_sprite.animations.play('angry');
+          break;
+        case 4:
+          this.m_actor_sprite.animations.play('confused');
+          break;
+        case 5:
+          this.m_actor_sprite.animations.play('flustered');
+          break;
+        default:
+          console.error("ERROR::Actor:advanceText:actions outside bound.");
+      }
+    }
   }
   
   destroy()
   {
     dialog_array.length = 0;
+    this.m_actions_array.length = 0;
+    this.m_actor_sprite.destroy;
   }
 }
 
@@ -114,36 +234,45 @@ var button_up = new Button();
 var button_down = new Button();
 var button_space = new Button();
 
-var script_loader = null;
-var loading_text = null;
 
-function loadStart()
+
+/*
+  This function will parse the text cashed into the browser and
+  place it into the dialog_array.
+  @param name str = The name of the cashe were the text is located.
+*/
+function parseTextCashe(name)
 {
-  game.load.image('sky', 'assets/sky.png');
-  game.load.image('ground', 'assets/platform.png');
-  game.load.image('star', 'assets/star.png');
-  game.load.image('actor', 'assets/actor.png');
-  game.load.image('textbox', 'assets/textbox.png');
-  game.load.text('script', 'assets/irene/script_1.txt');
-  game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
+  var text = game.cashe.getText(name);
+  var str = "";
+  var array = [];
+  
+  for (let i = 0; i < text.length; i++)
+  {
+    switch(text[i])
+    {
+      case '#': // # Display the name so a new textbox so new array needed.
+        dialog_array.push(array);
+        array = [];
+        break;
+      case '\n': // '\n' A newline so a new string.
+        array.push(str);
+        str = "";
+        break;
+      case '@': // @ Emotion so update the emotion
+        break;
+      default:
+        str += text[i];
+    }
+  }
 }
 
-function fileComplete(progress, cacheKey, success, totalLoaded, totalFiles)
-{
-  loading_text.setText("File Complete: " + progress + "% - " + totalLoaded + " out of " + totalFiles);
-}
-
-function loadComplete()
-{
-  loading_text.text = "";
-}
-
-function preload() {
-
-    game.load.onLoadStart.add(loadStart, this);
-    game.load.onFileComplete.add(fileComplete, this);
-    game.load.onLoadComplete.add(loadComplete, this);
-    game.load.image('__missing', 'assets/missing.png');
+var gameState = {
+  
+  preload() 
+  {
+    
+    
     
     loading_text = game.add.text(32, 32, 
       'Loading...', { fill: '#ffffff' });
@@ -160,23 +289,26 @@ function preload() {
     
     //script_loader = game.load.text("script", 'assets/script.txt');
     
-}
+  },
 
-function create() {
-  //game.add.sprite(0,0,'sky');
+  create() 
+  {
+    while(1)
+    {
+      if (load_complete == true)
+      {
+        console.log("load_complete: " + load_complete);
+        // Creating the Actor
+        actor = new Actor(game, "Entry Text", "Exit Text", "Nindo", 'script', dialog_array, 'dude');
   
-  // Creating the Actor
-  actor = new Actor(game, "Entry Text", "Exit Text", "Nindo", dialog_array, 'dude');
-  
-  space_key = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
-  //actor.advanceText();
-  
-  //game.add.sprite(0,0,'textbox');
-    
-  
-}
+        space_key = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+        break;
+      }
+    } 
+  },
 
-function update() {
+  update() 
+  {
   
   if (cursors.left.isDown)
   {
@@ -222,7 +354,15 @@ function update() {
     button_down.updateState(false);
     button_space.updateState(false);
   }
+  }
 }
+
+// States
+game.state.add('boot', bootState);
+game.state.add('load', loadState);
+game.state.add('game', gameState);
+
+game.state.start('boot');
 
 </script>
 
