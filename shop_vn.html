@@ -77,7 +77,12 @@ var bootState = {
     game.load.text('irene_1', 'assets/day_1/irene/irene_1.txt');
     game.load.text('maggy_1', 'assets/day_1/maggy/maggy_1.txt');
     game.load.text('maggy_2', 'assets/day_1/maggy/maggy_2.txt');
+    game.load.text('test', 'assets/day_1/maggy/test.txt');
     
+    //game.state.start('load');
+  },
+  create: function()
+  {
     game.state.start('load');
   }
 };
@@ -229,7 +234,7 @@ class Actor
     console.log("Actor:destroy: Got called.");
     dialog_array.length = 0;
     this.m_actions_array.length = 0;
-    this.m_actor_sprite.destroy;
+    this.m_actor_sprite.destroy();
   }
 }
 
@@ -282,6 +287,8 @@ function parseTextCache(name, mode)
     return;
   }
 
+  let t = game.cache.getText('maggy_2');
+
   var text = game.cache.getText(name);
   // Dumb check
   if (text == null)
@@ -329,6 +336,7 @@ function parseTextCache(name, mode)
         }
         else
         {
+          console.log("Checking name: " + text[i]);
           more_text_name += text[i];
         }
     }
@@ -358,16 +366,8 @@ var gameState = {
     }
     
     var array_1 = [];
-    array_1.push("Unknown Woman");
-    array_1.push("\"My Goodness, you must be " + player_name + ".");
-    array_1.push("Pleasure to meet you.");
-    array_1.push("You may call me Silkie.\"");
-    dialog_array.push(array_1);
-    dialog_array.push("This is dialog");
     
     cursors = game.input.keyboard.createCursorKeys();
-    
-    
   },
 
   create() 
@@ -401,6 +401,8 @@ var gameState = {
           actor_order_array[0]+ '_1', dialog_array, 'dude');
   
         space_key = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+
+        //game.cache.getText('maggy_2');
       }
       else
       {
