@@ -24,7 +24,10 @@ var actor_pos_y = game.height / 2;
 var textbox_pos_x = 0;
 var textbox_pos_y = (game.height / 3) * 2;
 var actor = null;
+var actor_order_array = [];
+var actor_order_index = 0;
 var dialog_array = [];
+var more_text_array = [];
 var background_group = null;
 var middle_group = null;
 var front_group = null;
@@ -43,7 +46,6 @@ function loadStart()
   game.load.image('star', 'assets/star.png');
   game.load.image('actor', 'assets/actor.png');
   game.load.image('textbox', 'assets/textbox.png');
-  //game.load.text('script', 'assets/irene/script_1.txt');
   game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
 }
 
@@ -63,8 +65,6 @@ function loadComplete()
   loading_text.text = "Load Complete.";
   console.log("Load Complete called.");
   load_complete = true;
-  //loading_text.destroy;
-  //game.state.start('game');
 }
 
 var bootState = {
@@ -72,7 +72,11 @@ var bootState = {
   {
     console.log("Boot State.");
     // loading the text files.
-    game.load.text('script', 'assets/irene/script_1.txt');
+    game.load.text('order',   'assets/day_1/order.txt');
+    game.load.text('clark_1', 'assets/day_1/clark/clark_1.txt');
+    game.load.text('irene_1', 'assets/day_1/irene/irene_1.txt');
+    game.load.text('maggy_1', 'assets/day_1/maggy/maggy_1.txt');
+    game.load.text('maggy_2', 'assets/day_1/maggy/maggy_2.txt');
     
     game.state.start('load');
   }
@@ -90,16 +94,6 @@ var loadState = {
     game.load.onLoadStart.add(loadStart, this);
     game.load.onFileComplete.add(fileComplete, this);
     game.load.onLoadComplete.add(loadComplete, this);
-   /* 
-    game.load.image('sky', 'assets/sky.png');
-    game.load.image('ground', 'assets/platform.png');
-    game.load.image('star', 'assets/star.png');
-    game.load.image('actor', 'assets/actor.png');
-    game.load.image('textbox', 'assets/textbox.png');
-    //game.load.text('script', 'assets/irene/script_1.txt');
-    game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
-  */  
-    //game.state.start('game');
   },
   create()
   {
@@ -109,7 +103,7 @@ var loadState = {
   {
     //console.log("loadState:update");
     //console.log("loadState:progress: " + game.load.progress);
-    if (game.cache.getText('script') != null)
+    if (game.cache.getText('clark_1') != null)
     { console.log("Finished loading?"); game.state.start('game'); }
   }
 };
@@ -163,8 +157,14 @@ class Actor
     this.m_actor_sprite.animations.add('flustered', [5,6,7,8], 30, true);
     
     this.m_actor_sprite.animations.play('idle');
-    
-    parseTextCashe(script_handle);
+   
+    // Places the dialog for the Actor in the dialog_array. 
+    this.m_more = parseTextCache(script_handle, 1);
+    if (this.m_more != null)
+    {
+      // We have a more text object to create.
+      parseTextCache(this.m_more, 2)
+    }
     
     // Display the dialog object.
     this.m_textbox = new GenericTextBox(this.m_game, textbox_pos_x, textbox_pos_y,
@@ -181,7 +181,6 @@ class Actor
   
   advanceText()
   {
-    this.m_textbox.advanceText();
     this.m_action_counter += 1;
     
     if (this.m_actions_array[this.m_action_counter] != 0)
@@ -213,10 +212,21 @@ class Actor
           console.error("ERROR::Actor:advanceText:actions outside bound.");
       }
     }
+
+    // Returns true on good to continue or false when there is 
+    // no text to advance to.
+    if (this.m_textbox.advanceText() == false)
+    {
+      // We got to the end of the actor dialog, destroy.
+      this.destroy();
+      return false;
+    }
+    return true;
   }
   
   destroy()
   {
+    console.log("Actor:destroy: Got called.");
     dialog_array.length = 0;
     this.m_actions_array.length = 0;
     this.m_actor_sprite.destroy;
@@ -255,19 +265,44 @@ var button_space = new Button();
   This function will parse the text cashed into the browser and
   place it into the dialog_array.
   @param name str = The name of the cashe were the text is located.
+  @param mode int = The mode for where to place the text.
+      1: dialog_array
+      2: more_text_array
 */
-function parseTextCashe(name)
+function parseTextCache(name, mode)
 {
+  let error_str = "ERROR::parseTextCache:";
+  if (!testVarValidity(mode, 'number', 0,3,error_str))
+  { console.error(" " + mode + " is not a 1 or 2. Invalid Mode."); return; }
+  if (!testVarValidity(name, 'string', -123, 123, error_str))
+  { 
+    console.error(" " + name + " is not a string?"); 
+    if (mode == 1) { dialog_array.push("ERROR"); }
+    if (mode == 2) { more_text_array.push("ERROR"); }
+    return;
+  }
+
   var text = game.cache.getText(name);
+  // Dumb check
+  if (text == null)
+  {
+    console.error(error_str + " text is null for "+name+ "? Thats bad...C=\"#ERROR\"");
+    text = "#ERROR" + '\n' + '#';
+  }
   var str = "";
   var array = [];
+  let more_text_flag = false;
+  var more_text_name = "";
   
   for (let i = 0; i < text.length; i++)
   {
     switch(text[i])
     {
       case '#': // # Display the name so a new textbox so new array needed.
-        dialog_array.push(array);
+        // REMEMBER: You must end the dialog box with a # or else the 
+        // last one will not be displayed to the screen.
+        if (mode == 1) { dialog_array.push(array); }
+        if (mode == 2) { more_text_array.push(array); }
         array = [];
         break;
       case '\n': // '\n' A newline so a new string.
@@ -275,10 +310,36 @@ function parseTextCashe(name)
         str = "";
         break;
       case '@': // @ Emotion so update the emotion
+        // update the actor_actions_array here.
+        break;
+      case '*': // * is just to sub in the players name, as it might be var.
+        //array.push(player_name);
+        str += player_name;
+        break;
+      case '<': // The start of the more_text_name.
+        more_text_flag = true;
+        break;
+      case '>': // The end of the more_text_name.
+        more_text_flag = false;
         break;
       default:
-        str += text[i];
+        if (more_text_flag == false)
+        {
+          str += text[i];
+        }
+        else
+        {
+          more_text_name += text[i];
+        }
     }
+  }
+  if (more_text_name == "")
+  {
+    return null;
+  }
+  else
+  {
+    return more_text_name;
   }
 }
 
@@ -306,20 +367,38 @@ var gameState = {
     
     cursors = game.input.keyboard.createCursorKeys();
     
-    //script_loader = game.load.text("script", 'assets/script.txt');
     
   },
 
   create() 
   {
     console.log("gameState:create");
-    //while(load_complete == false)
-    //{
       if (load_complete == true)
       {
         console.log("load_complete: " + load_complete);
+        // Populate the actor_order_array
+        var order_text = game.cache.getText('order'); 
+        var str = "";
+        for (let i = 0; i < order_text.length; i++)
+        {
+          switch(order_text[i])
+          {
+            case '\n':
+              actor_order_array.push(str);
+              str = "";
+              break;
+            default:
+              str += order_text[i];
+          }
+        }
+        if (actor_order_array.length == 0)
+        {
+          console.error("ERROR::gameState:create: Could not get any text from order.txt?");
+          actor_order_array.push('clark_1');
+        }
         // Creating the Actor
-        actor = new Actor(game, "Entry Text", "Exit Text", "Nindo", 'script', dialog_array, 'dude');
+        actor = new Actor(game, "Entry Text", "Exit Text", "Nindo", 
+          actor_order_array[0]+ '_1', dialog_array, 'dude');
   
         space_key = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
       }
@@ -327,7 +406,6 @@ var gameState = {
       {
         console.log("load_complete is not true?");
       }
-    //}
   },
 
   update() 
@@ -367,7 +445,22 @@ var gameState = {
     if (button_space.getState() == false)
     {
       button_space.updateState(true);
-      actor.advanceText();
+      if (actor != null && actor.advanceText() == false)
+      {
+        // We got to the end of dialog for the current actor
+        // and must get a new actor from actor_order_array.
+        actor_order_index += 1;
+        if (actor_order_index < actor_order_array.length)
+        {
+          actor = new Actor(game, "En", "Ex", "Bl", 
+            actor_order_array[actor_order_index]+ '_1', dialog_array, 'dude');
+        }
+        else
+        {
+          actor = null;
+        }
+      
+      }
     }
   }
   else
