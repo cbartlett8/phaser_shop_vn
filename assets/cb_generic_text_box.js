@@ -180,11 +180,25 @@ class GenericTextBox
 
 
     /*
-    Checks to see if there is more text to be displayed to the screen.
+    Displays the text from the different array of more_text_array.
     @return true or false 
     */
     moreText()
     {
+      // Check if more_text_array exists.
+      if (more_text_array == 'undefined')
+      {
+        return;
+      }
+      if (more_text_array.length = 0)
+      {
+        return;
+      }
+      
+      for (var i = 0; i < this.m_dialog_array[this.m_dialog_array_current_position].length; i++)
+      {
+        this.m_text_array[i].text = more_text_array[0][i];
+      }
     }
 
     /*

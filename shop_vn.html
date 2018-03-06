@@ -19,8 +19,8 @@
 var game = new Phaser.Game(800, 600, Phaser.CANVAS, '');//, { preload: preload, create: create, update: update });
 
 var player_name = "Chris"; // Just the default name the Actors will call the player.
-var actor_pos_x = game.width / 2;
-var actor_pos_y = game.height / 2;
+var actor_pos_x = game.width / 2 - 100;
+var actor_pos_y = game.height / 2 - 225;
 var textbox_pos_x = 0;
 var textbox_pos_y = (game.height / 3) * 2;
 var actor = null;
@@ -28,6 +28,7 @@ var actor_order_array = [];
 var actor_order_index = 0;
 var dialog_array = [];
 var more_text_array = [];
+var array_BAM = [];
 var background_group = null;
 var middle_group = null;
 var front_group = null;
@@ -37,15 +38,23 @@ var space_key = null;
 var load_complete = false;
 var script_loader = null;
 var loading_text = null;
+var background = "";
+var actor_background = "";
+
+
 
 function loadStart()
 {
   console.log("loadStart Starting...");
   game.load.image('sky', 'assets/sky.png');
+  game.load.image('actor_back', 'assets/actor_back.png');
   game.load.image('ground', 'assets/platform.png');
   game.load.image('star', 'assets/star.png');
   game.load.image('actor', 'assets/actor.png');
   game.load.image('textbox', 'assets/textbox.png');
+  game.load.spritesheet('minako', 'assets/minako_sheet.png', 200, 329);
+  game.load.spritesheet('reila', 'assets/reila_sheet.png', 200, 329);
+  game.load.spritesheet('sano', 'assets/sano_sheet.png', 200, 400);
   game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
 }
 
@@ -133,6 +142,7 @@ class Actor
   constructor(game, entry_str, exit_str, saying_str, script_handle, 
     string_array, spritesheet)
   {
+    console.log("Starting Actor obj: spritesheet: " + spritesheet);
     this.m_game = game;
     //game.add.sprite(0,0,'textbox');
     
@@ -148,28 +158,49 @@ class Actor
     this.m_str_saying = saying_str;
     this.m_str_array = string_array;
     
+    // Array of Background, Action, More (BAM)
+    // So every index will contain three strings. "0" for empty / no change
+    this.m_BAM_array = [];
+    
     
     // sprites
     this.m_spritesheet_name = spritesheet;
     
     // sprite setup
     this.m_actor_sprite = game.add.sprite(actor_pos_x, actor_pos_y, this.m_spritesheet_name);
-    this.m_actor_sprite.animations.add('idle', [0,1,2,3], 30, true);
-    this.m_actor_sprite.animations.add('happy', [1,2,3,4], 30, true);
-    this.m_actor_sprite.animations.add('sad', [2,3,4,5], 30, true);
-    this.m_actor_sprite.animations.add('angry', [3,4,5,6], 30, true);
-    this.m_actor_sprite.animations.add('confused', [4,5,6,7], 30, true);
-    this.m_actor_sprite.animations.add('flustered', [5,6,7,8], 30, true);
+    this.m_actor_sprite.animations.add('idle', [0], 30, true); //,1,2,3], 30, true);
+    this.m_actor_sprite.animations.add('happy', [1], 30, true); //,2,3,4], 30, true);
+    this.m_actor_sprite.animations.add('sad', [2], 30, true); //,3,4,5], 30, true);
+    this.m_actor_sprite.animations.add('angry', [3], 30, true); //,4,5,6], 30, true);
+    this.m_actor_sprite.animations.add('confused', [4], 30, true); //,5,6,7], 30, true);
+    this.m_actor_sprite.animations.add('flustered', [4], 30, true); //,6,7,8], 30, true);
     
     this.m_actor_sprite.animations.play('idle');
    
-    // Places the dialog for the Actor in the dialog_array. 
+    this.m_BAM_array = parseTextCache(script_handle, 1);
+    
+    for(let i = 0; i < this.m_BAM_array.length; i++)
+    {
+      for(let j = 0; j < this.m_BAM_array[i].length; j++)
+      {
+        console.log("Content of this.m_BAM_array[" + i + "][" + j + "]:" + 
+          this.m_BAM_array[i][j]);
+      }
+    }
+    /* Places the dialog for the Actor in the dialog_array. 
     this.m_more = parseTextCache(script_handle, 1);
     if (this.m_more != null)
     {
       // We have a more text object to create.
       parseTextCache(this.m_more, 2)
     }
+    else
+    {
+      // Zero out the more_text_array
+      // in case there is something there.
+      more_text_array.length = 0;
+    }
+    */
     
     // Display the dialog object.
     this.m_textbox = new GenericTextBox(this.m_game, textbox_pos_x, textbox_pos_y,
@@ -181,43 +212,10 @@ class Actor
     this.m_actions_array.fill(0);
     
     this.m_action_counter = 0;
-    
   }
   
   advanceText()
   {
-    this.m_action_counter += 1;
-    
-    if (this.m_actions_array[this.m_action_counter] != 0)
-    {
-      this.m_actor_sprite.animations.stop();
-      // We have to change the emotion state of the actor to the new
-      // state.
-      switch(this.m_actions_array[this.m_action_counter])
-      {
-        case 0:
-          this.m_actor_sprite.animations.play('idle');
-          break;
-        case 1:
-          this.m_actor_sprite.animations.play('happy');
-          break;
-        case 2:
-          this.m_actor_sprite.animations.play('sad');
-          break;
-        case 3:
-          this.m_actor_sprite.animations.play('angry');
-          break;
-        case 4:
-          this.m_actor_sprite.animations.play('confused');
-          break;
-        case 5:
-          this.m_actor_sprite.animations.play('flustered');
-          break;
-        default:
-          console.error("ERROR::Actor:advanceText:actions outside bound.");
-      }
-    }
-
     // Returns true on good to continue or false when there is 
     // no text to advance to.
     if (this.m_textbox.advanceText() == false)
@@ -226,6 +224,53 @@ class Actor
       this.destroy();
       return false;
     }
+    
+    // Background, Action, More_text
+    if (this.m_BAM_array[this.m_action_counter][0] != "")
+    {
+      // create the actor_background
+      actor_background = game.add.sprite(0,0,this.m_BAM_array[this.m_action_counter][0]);
+      background_group.add(actor_background);
+    }
+    if (this.m_BAM_array[this.m_action_counter][1] != "")
+    {
+      console.log("ACTION: " + this.m_BAM_array[this.m_action_counter][1]);
+      this.m_actor_sprite.animations.stop();
+      // Change the actor sprite here.
+      //this.m_actor_sprite.animations.play(this.m_BAM_array[this.m_action_counter][1]);
+
+      switch(this.m_BAM_array[this.m_action_counter][1])
+      {
+        case "idle":
+          this.m_actor_sprite.animations.play('idle');
+          break;
+        case 'happy':
+          this.m_actor_sprite.animations.play('happy');
+          break;
+        case "sad":
+          this.m_actor_sprite.animations.play('sad');
+          break;
+        case "angry":
+          this.m_actor_sprite.animations.play('angry');
+          break;
+        case "confused":
+          this.m_actor_sprite.animations.play('confused');
+          break;
+        case "flustered":
+          this.m_actor_sprite.animations.play('flustered');
+          break;
+        default:
+          console.error("ERROR::Actor:advanceText:actions outside bound.");
+          this.m_actor_sprite.animations.play('idle');
+      }
+
+    }
+    if (this.m_BAM_array[this.m_action_counter][2] != "")
+    {
+      // Load the m_more_text thing here.
+    }
+    this.m_action_counter += 1;
+    
     return true;
   }
   
@@ -233,6 +278,8 @@ class Actor
   {
     console.log("Actor:destroy: Got called.");
     dialog_array.length = 0;
+    this.m_BAM_array.length = 0;
+    actor_background.destroy();
     this.m_actions_array.length = 0;
     this.m_actor_sprite.destroy();
   }
@@ -265,6 +312,35 @@ var button_down = new Button();
 var button_space = new Button();
 
 
+/*
+  Function to resolve the names from the order.txt to the 
+  sprites that they are supposed to use when making the 
+  call to the Actor object.
+*/
+function resolveActorSprite(string_in)
+{
+  console.log("resolveActorSprite: entered with string: " + string_in);
+  let error_str = "ERROR::resolveActorSprite:";
+  if (string_in == '') 
+  { 
+    console.error(error_str + " " + string_in + " : empty string."); 
+    return 'dude'; 
+  }
+  if (!testVarValidity(string_in, 'string', -123, 123, error_str))
+  {
+    console.error(error_str + "string_in: " + string_in + " is not a string? C=sano");
+    string_in = 'sano';
+  }
+  
+  if (string_in === 'clark')
+  { return 'sano'; }
+  else if (string_in === 'irene')
+  { return 'minako'; }
+  else if (string_in === 'maggy')
+  { return 'reila'; }
+  else
+  { return 'dude'; }
+}
 
 /*
   This function will parse the text cashed into the browser and
@@ -287,7 +363,7 @@ function parseTextCache(name, mode)
     return;
   }
 
-  let t = game.cache.getText('maggy_2');
+  //let t = game.cache.getText('maggy_2');
 
   var text = game.cache.getText(name);
   // Dumb check
@@ -300,6 +376,11 @@ function parseTextCache(name, mode)
   var array = [];
   let more_text_flag = false;
   var more_text_name = "";
+  let background_flag = false;
+  var background_name = "";
+  let action_flag = false;
+  var action_name = "";
+  var array_temp_BAM = [];
   
   for (let i = 0; i < text.length; i++)
   {
@@ -311,6 +392,22 @@ function parseTextCache(name, mode)
         if (mode == 1) { dialog_array.push(array); }
         if (mode == 2) { more_text_array.push(array); }
         array = [];
+        
+        // FOR THE ACTIONS.
+        array_temp_BAM.push(background_name);
+        array_temp_BAM.push(action_name);
+        array_temp_BAM.push(more_text_name);
+        
+        //console.log("parseTextFile # hit array_temp_BAM.length: " + array_temp_BAM.length);
+        //console.log("B: " + array_temp_BAM[0] + " A: " + array_temp_BAM[1]);
+        
+        array_BAM.push(array_temp_BAM);
+        array_temp_BAM = [];
+        
+        background_name = "";
+        action_name = "";
+        more_text_name = "";
+        
         break;
       case '\n': // '\n' A newline so a new string.
         array.push(str);
@@ -323,24 +420,51 @@ function parseTextCache(name, mode)
         //array.push(player_name);
         str += player_name;
         break;
+      // Loading the more text name.
       case '<': // The start of the more_text_name.
         more_text_flag = true;
         break;
       case '>': // The end of the more_text_name.
         more_text_flag = false;
         break;
+      // For changing the background displayed.
+      case '[':
+        background_flag = true;
+        break;
+      case ']':
+        background_flag = false;
+        break;
+      // For changing the current action the actor is doing and other.
+      case '{':
+        action_flag = true;
+        break;
+      case '}':
+        action_flag = false;
+        break;
       default:
-        if (more_text_flag == false)
+        if (more_text_flag == true)
         {
-          str += text[i];
+          console.log("more_text_name: " + more_text_name);
+          more_text_name += text[i];
+        }
+        else if (background_flag == true)
+        {
+          console.log("background_name: " + background_name);
+          background_name += text[i];
+        }
+        else if (action_flag == true)
+        {
+          console.log("action_name: " + action_name);
+          action_name += text[i];
         }
         else
         {
-          console.log("Checking name: " + text[i]);
-          more_text_name += text[i];
+          str += text[i];
         }
     }
   }
+  return array_BAM;
+  /*
   if (more_text_name == "")
   {
     return null;
@@ -349,6 +473,7 @@ function parseTextCache(name, mode)
   {
     return more_text_name;
   }
+  */
 }
 
 var gameState = {
@@ -376,16 +501,38 @@ var gameState = {
       if (load_complete == true)
       {
         console.log("load_complete: " + load_complete);
+        
+        // creating image layers.
+        background_group = game.add.group();
+        middle_group = game.add.group();
+        front_group = game.add.group();
+        hud_group = game.add.group();
+        
         // Populate the actor_order_array
         var order_text = game.cache.getText('order'); 
         var str = "";
+        
+        // Drawing the default background as dictated by order.
+        //background = game.add.sprite(0,0,order_text[0]);
+        let background_flag = false;
+        
         for (let i = 0; i < order_text.length; i++)
         {
           switch(order_text[i])
           {
             case '\n':
-              actor_order_array.push(str);
-              str = "";
+              if (background_flag == false)
+              {
+                background = game.add.sprite(0,0,str);
+                background_group.add(background);
+                background_flag = true;
+                str = "";
+              }
+              else
+              {
+                actor_order_array.push(str);
+                str = "";
+              }
               break;
             default:
               str += order_text[i];
@@ -396,9 +543,13 @@ var gameState = {
           console.error("ERROR::gameState:create: Could not get any text from order.txt?");
           actor_order_array.push('clark_1');
         }
+        
+        // Get the sprite_sheet name from order
+        
         // Creating the Actor
         actor = new Actor(game, "Entry Text", "Exit Text", "Nindo", 
-          actor_order_array[0]+ '_1', dialog_array, 'dude');
+          actor_order_array[0]+ '_1', dialog_array, 
+          'sano');
   
         space_key = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
@@ -455,7 +606,8 @@ var gameState = {
         if (actor_order_index < actor_order_array.length)
         {
           actor = new Actor(game, "En", "Ex", "Bl", 
-            actor_order_array[actor_order_index]+ '_1', dialog_array, 'dude');
+            actor_order_array[actor_order_index]+ '_1', dialog_array, 
+            resolveActorSprite(actor_order_array[actor_order_index]));
         }
         else
         {

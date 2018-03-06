@@ -4,6 +4,8 @@ this assignment but this position has
 to be manned.
 #*
 Yeah, yeah...
+[actor_back]
+{happy}
 #Clark 
 Hey, you tested quite highly for this 
 position as you didn't pass out even 
@@ -23,4 +25,3 @@ Oh here comes the first customber, I gotta
 get out of here so just do a good job and
 this will be over before you know it. 
 #
-
