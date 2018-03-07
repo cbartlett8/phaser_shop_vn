@@ -176,6 +176,10 @@ class Actor
     this.m_actor_sprite.animations.add('flustered', [4], 30, true); //,6,7,8], 30, true);
     
     this.m_actor_sprite.animations.play('idle');
+    
+    // Original sprite size
+    this.m_actor_sprite_width = this.m_actor_sprite.width;
+    this.m_actor_sprite_height = this.m_actor_sprite.height;
    
     this.m_BAM_array = parseTextCache(script_handle, 1);
     
@@ -223,6 +227,21 @@ class Actor
       // We got to the end of the actor dialog, destroy.
       this.destroy();
       return false;
+    }
+    
+    // Check if the first string in the array is our main_characters name or
+    // one for the portraits. Make the portrait bigger or smaller or more
+    // transparent or not based on this.
+    if (dialog_array[this.m_action_counter][0] == player_name)
+    {
+      this.m_actor_sprite.width = this.m_actor_sprite_width;
+      this.m_actor_sprite.height = this.m_actor_sprite_height;
+    }
+    else
+    {
+      //this.m_actor_sprite.alpha = 1.0;
+      this.m_actor_sprite.width = this.m_actor_sprite_width + (this.m_actor_sprite_width*0.05);
+      this.m_actor_sprite.height = this.m_actor_sprite_height + (this.m_actor_sprite_height*0.05);
     }
     
     // Background, Action, More_text
