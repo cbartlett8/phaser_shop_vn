@@ -52,6 +52,7 @@ function loadStart()
   game.load.image('star', 'assets/star.png');
   game.load.image('actor', 'assets/actor.png');
   game.load.image('textbox', 'assets/textbox.png');
+  game.load.spritesheet('button_reset', 'assets/button_reset_sheet.png', 128,64);
   game.load.spritesheet('minako', 'assets/minako_sheet.png', 200, 329);
   game.load.spritesheet('reila', 'assets/reila_sheet.png', 200, 329);
   game.load.spritesheet('sano', 'assets/sano_sheet.png', 200, 400);
@@ -571,6 +572,25 @@ var gameState = {
           'sano');
   
         space_key = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+        
+        // Putting a button in here to test things.
+        var reset_button = game.add.button(500, 20, 'button_reset', null, this,
+          1, 0, 2, 1); // overFrame, outFrame, downFrame, upFrame
+          
+        reset_button.events.onInputDown.add(function() 
+        { 
+          console.log("Reset_button is DOWN."); 
+          actor_order_index = 0;
+          actor.destroy();
+          actor = new Actor(game, "Entry Text", "Exit Text", "Nindo", 
+          actor_order_array[0]+ '_1', dialog_array, 
+          'sano');
+        });
+        reset_button.events.onInputUp.add(function() 
+        { 
+          console.log("Reset_button is UP."); 
+          
+        }); 
 
         //game.cache.getText('maggy_2');
       }
