@@ -57,6 +57,10 @@ function loadStart()
   game.load.spritesheet('reila', 'assets/reila_sheet.png', 200, 329);
   game.load.spritesheet('sano', 'assets/sano_sheet.png', 200, 400);
   game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
+  game.load.spritesheet('effectSwipeRight', 
+    'assets/effect_swipe_black_sheet_proto.png', 800, 600);
+  game.load.audio('AudioExplosion', 'assets/sfx/explosion.mp3');
+  game.load.audio('AudioBlaster', 'assets/sfx/blaster.mp3');
 }
 
 function fileComplete(progress, cacheKey, success, totalLoaded, totalFiles)
@@ -176,6 +180,18 @@ class Actor
     this.m_actor_sprite.animations.add('confused', [4], 30, true); //,5,6,7], 30, true);
     this.m_actor_sprite.animations.add('flustered', [4], 30, true); //,6,7,8], 30, true);
     
+    this.m_left_pos_x = actor_pos_x - 200;
+    this.m_right_pos_x = actor_pos_x + 200;
+    this.m_center_pos_x = actor_pos_x;
+    
+    // audio setup
+    this.m_AudioExplosion = game.add.audio('AudioExplosion');
+    this.m_AudioBlaster = game.add.audio('AudioBlaster');
+    
+    // effects
+    this.m_effectSwipeRight = game.add.sprite(-800, 0, 'effectSwipeRight');
+    this.m_effectSwipeRight.animations.add('run', [0,1,2,3,4,5,6,7], 15, false);
+    
     this.m_actor_sprite.animations.play('idle');
     
     // Original sprite size
@@ -235,14 +251,17 @@ class Actor
     // transparent or not based on this.
     if (dialog_array[this.m_action_counter][0] == player_name)
     {
-      this.m_actor_sprite.width = this.m_actor_sprite_width;
-      this.m_actor_sprite.height = this.m_actor_sprite_height;
+      this.m_actor_sprite.tint = 0xD3D3D3;
+      //this.m_actor_sprite.alpha = 0.8;
+      //this.m_actor_sprite.width = this.m_actor_sprite_width;
+      //this.m_actor_sprite.height = this.m_actor_sprite_height;
     }
     else
     {
+      this.m_actor_sprite.tint = 0xffffff;
       //this.m_actor_sprite.alpha = 1.0;
-      this.m_actor_sprite.width = this.m_actor_sprite_width + (this.m_actor_sprite_width*0.05);
-      this.m_actor_sprite.height = this.m_actor_sprite_height + (this.m_actor_sprite_height*0.05);
+      //this.m_actor_sprite.width = this.m_actor_sprite_width + (this.m_actor_sprite_width*0.05);
+      //this.m_actor_sprite.height = this.m_actor_sprite_height + (this.m_actor_sprite_height*0.05);
     }
     
     // Background, Action, More_text
@@ -259,12 +278,92 @@ class Actor
       // Change the actor sprite here.
       //this.m_actor_sprite.animations.play(this.m_BAM_array[this.m_action_counter][1]);
 
-      switch(this.m_BAM_array[this.m_action_counter][1])
+      if (this.m_BAM_array[this.m_action_counter][1][0] === 'B')
       {
+          console.log("Actor:advanceText:action B for Bundle was found.");
+          var str = this.m_BAM_array[this.m_action_counter][1].substr(1);
+          
+          // break up the string into three substrings where there is 
+          // a '_' character.
+          var str_array = [];
+
+          // start index.
+          let start_ind = 0;
+          
+          for (let i = 0; i < str.length; i++)
+          {
+            if (str[i] == '_')
+            {
+              str_array.push(str.substring(start_ind, i));
+              start_ind = i+1;
+            }
+          }
+          
+          // now check the emotion of the character/actor 0
+          if (this.changeActorEmotion(str_array[0]) == false)
+          { console.error("Actor:advanceText:B: Actor Emotion not found?" + str_array[0]); }
+          
+          // check the sfx/music for the box 1
+          if (this.playBackgroundSfx(str_array[1]) == false)
+          { console.error("Actor:advanceText:B: sfx not found?" + str_array[1]); }
+          
+          // check the effect 2
+          if (this.triggerEffect(str_array[2]) == false)
+          { console.error("Actor:advanceText:B: effect not found?" + str_array[2]); }
+          /*
+          // Check to see if this will work.
+          for (let i = 0; i < str_array.length; i++)
+          { console.log("string : " + str_array[i]); }
+          
+          if (str_array[1] == "blaster")
+          {
+            this.m_AudioBlaster.play();
+          }
+          else if (str_array[1] == "explosion")
+          {
+            this.m_AudioExplosion.play();
+          }
+          else
+          {
+            console.log("ERROR::Actor:advanceText: unexpected audio: " + str_array[1]);
+          }
+          */
+
+      }
+      else // The simple form just changing the emotion of the actor.
+      {
+        if (this.changeActorEmotion(this.m_BAM_array[this.m_action_counter][1]) == false)
+        { console.error("Actor:advanceText: Actor Emotion not found?" + 
+          this.m_BAM_array[this.m_action_counter][1]); }
+    }
+
+    }
+    if (this.m_BAM_array[this.m_action_counter][2] != "")
+    {
+      // Load the m_more_text thing here.
+    }
+    this.m_action_counter += 1;
+    
+    return true;
+  }
+  
+  // Changes the emotion of the current actor sprite based on 
+  // the string sent in.
+  // return false on error.
+  changeActorEmotion(str)
+  {
+    if (str == null) { return false; }
+    if (str == "")   { return false; }
+    
+    console.log("Actor:changeActorEmotion:str:" + str + ":");
+    
+    this.m_actor_sprite.animations.stop();
+    switch(str)
+    {
         case "idle":
           this.m_actor_sprite.animations.play('idle');
           break;
-        case 'happy':
+        case "happy":
           this.m_actor_sprite.animations.play('happy');
           break;
         case "sad":
@@ -279,17 +378,79 @@ class Actor
         case "flustered":
           this.m_actor_sprite.animations.play('flustered');
           break;
+        case "nothing":
+          break;
         default:
-          console.error("ERROR::Actor:advanceText:actions outside bound.");
+          console.error("ERROR::Actor:advanceText:actions outside bound." +
+            this.m_BAM_array[this.m_action_counter][1]);
           this.m_actor_sprite.animations.play('idle');
-      }
-
+          return false;
     }
-    if (this.m_BAM_array[this.m_action_counter][2] != "")
+    return true;
+  }
+  
+  // playBackgroundMusic(str)
+  // playBackgroundSfx(str) return false if fail.
+  playBackgroundSfx(str)
+  {
+    if (str == null) { return false; }
+    if (str == "")   { return false; }
+    
+    console.log("Actor:playBackgroundSfx:str:" + str + ":");
+    
+    switch(str)
     {
-      // Load the m_more_text thing here.
+      case "blaster":
+        this.m_AudioBlaster.play();
+        break;
+      case "explosion":
+        this.m_AudioExplosion.play();
+        break;
+      case "nothing":
+        break;
+      default:
+        return false;
     }
-    this.m_action_counter += 1;
+    return true;
+  }
+  
+  /*
+    triggerEffect same as the others, we take in a string and 
+    if we fail we return false.
+  */
+  triggerEffect(str)
+  {
+    if (str == null) { return false; }
+    if (str == "")   { return false; }
+    
+    console.log("Actor:triggerEffect:str:" + str + ":");
+    // Stop all effects.
+    this.m_effectSwipeRight.animations.stop();
+
+    // Move all effects offscreen
+    this.m_effectSwipeRight.x = -800;
+    
+    switch(str)
+    {
+      case "nothing":
+        break;
+      case "swipeRight":
+        // move back to the playfield
+        this.m_effectSwipeRight.x = 0;
+        // This would play the animation.
+        this.m_effectSwipeRight.animations.play('run');
+        break;
+      case "moveLeft":
+        this.m_actor_sprite.x = this.m_left_pos_x;
+        break;
+      case "moveRight":
+        this.m_actor_sprite.x = this.m_right_pos_x;
+        break;
+      case "moveCenter":
+        this.m_actor_sprite.x = this.m_center_pos_x;
+      default:
+        return false;
+    }
     
     return true;
   }
@@ -406,7 +567,7 @@ function parseTextCache(name, mode)
   {
     switch(text[i])
     {
-      case '#': // # Display the name so a new textbox so new array needed.
+      case '#': // # Displaying the name so a new textbox is created, thus a new array.
         // REMEMBER: You must end the dialog box with a # or else the 
         // last one will not be displayed to the screen.
         if (mode == 1) { dialog_array.push(array); }
@@ -464,17 +625,17 @@ function parseTextCache(name, mode)
       default:
         if (more_text_flag == true)
         {
-          console.log("more_text_name: " + more_text_name);
+          //console.log("more_text_name: " + more_text_name);
           more_text_name += text[i];
         }
         else if (background_flag == true)
         {
-          console.log("background_name: " + background_name);
+          //console.log("background_name: " + background_name);
           background_name += text[i];
         }
         else if (action_flag == true)
         {
-          console.log("action_name: " + action_name);
+          //console.log("action_name: " + action_name);
           action_name += text[i];
         }
         else

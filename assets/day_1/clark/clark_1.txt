@@ -5,23 +5,27 @@ to be manned.
 #*
 Yeah, yeah...
 [actor_back]
-{happy}
+{Bhappy_blaster_nothing_}
 #Clark 
 Hey, you tested quite highly for this 
 position as you didn't pass out even 
 being in the same room as them in the 
+{Bangry_explosion_moveLeft_}
 #Clark
 past. Look I'll make sure you can get the
 best position just as soon as R&D gets 
 the automated system working.
+{happy}
 #*
 Thanks Clark.
 Additional Text Here.
 
 More text here to prove that nothing is getting cut off.
+{Bnothing_nothing_swipeRight_}
 
 #Clark
 Oh here comes the first customber, I gotta
 get out of here so just do a good job and
 this will be over before you know it. 
+{Bnothing_nothing_moveRight_}
 #
