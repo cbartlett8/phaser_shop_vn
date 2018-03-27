@@ -3,9 +3,10 @@
 <head> 
 	<meta charset="UTF-8" />
 	<title>Phaser - Making your first game, part 2</title>
-    <script src="assets/cb_generic_text_box.js"></script>
-    <script src="assets/helper.js"></script>
-    <script src="assets/phaser_2_10_0.js"></script>
+    <script src="assets/js/cb_generic_text_box.js"></script>
+    <script src="assets/js/cb_screens.js"></script>
+    <script src="assets/js/helper.js"></script>
+    <script src="assets/js/phaser_2_10_0.js"></script>
     <style type="text/css">
         body {
             margin: 0;
@@ -35,6 +36,7 @@ var front_group = null;
 var hud_group = null;
 var cursors = null;
 var space_key = null; 
+var enter_key = null;
 var load_complete = false;
 var script_loader = null;
 var loading_text = null;
@@ -42,6 +44,10 @@ var background = "";
 var actor_background = "";
 
 
+var scriptfile_substr = "";
+
+// Variables for the choices
+var message_box_choice = null;
 
 function loadStart()
 {
@@ -52,7 +58,13 @@ function loadStart()
   game.load.image('star', 'assets/star.png');
   game.load.image('actor', 'assets/actor.png');
   game.load.image('textbox', 'assets/textbox.png');
+  game.load.image('save_screen_back', 'assets/save_screen_back.png');
+  game.load.image('load_screen_back', 'assets/load_screen_back.png');
+  game.load.image('options_screen_back', 'assets/options_screen_back.png');
+  game.load.spritesheet('cursor', 'assets/cursor.png', 32, 32);
+  game.load.spritesheet('space_button_sprite', 'assets/space.png', 64, 64);
   game.load.spritesheet('button_reset', 'assets/button_reset_sheet.png', 128,64);
+  game.load.spritesheet('button_generic', 'assets/button_generic_sheet.png', 128, 64);
   game.load.spritesheet('minako', 'assets/minako_sheet.png', 200, 329);
   game.load.spritesheet('reila', 'assets/reila_sheet.png', 200, 329);
   game.load.spritesheet('sano', 'assets/sano_sheet.png', 200, 400);
@@ -88,9 +100,12 @@ var bootState = {
     // loading the text files.
     game.load.text('order',   'assets/day_1/order.txt');
     game.load.text('clark_1', 'assets/day_1/clark/clark_1.txt');
+    game.load.text('clark_2', 'assets/day_1/clark/clark_2.txt');
+    game.load.text('clark_3', 'assets/day_1/clark/clark_3.txt');
     game.load.text('irene_1', 'assets/day_1/irene/irene_1.txt');
     game.load.text('maggy_1', 'assets/day_1/maggy/maggy_1.txt');
     game.load.text('maggy_2', 'assets/day_1/maggy/maggy_2.txt');
+    game.load.text('CHOICE_1', 'assets/day_1/CHOICE/CHOICE_1.txt');
     game.load.text('test', 'assets/day_1/maggy/test.txt');
     
     //game.state.start('load');
@@ -208,37 +223,36 @@ class Actor
           this.m_BAM_array[i][j]);
       }
     }
-    /* Places the dialog for the Actor in the dialog_array. 
-    this.m_more = parseTextCache(script_handle, 1);
-    if (this.m_more != null)
-    {
-      // We have a more text object to create.
-      parseTextCache(this.m_more, 2)
-    }
-    else
-    {
-      // Zero out the more_text_array
-      // in case there is something there.
-      more_text_array.length = 0;
-    }
-    */
     
     // Display the dialog object.
     this.m_textbox = new GenericTextBox(this.m_game, textbox_pos_x, textbox_pos_y,
       3, dialog_array, 3,100);
+      
+    // Displaying the spacebar thing.
+    this.m_space_button_sprite = this.m_game.add.sprite(this.m_game.width - 90,
+      this.m_game.height - 90, 'space_button_sprite');
+    this.m_space_button_sprite.animations.add('idle', [0,1], 1, true);
+    this.m_space_button_sprite.play('idle');
       
     // BETA TESTING ONLY HERE!!!!
     this.m_actions_array = [];
     this.m_actions_array.length = 100;
     this.m_actions_array.fill(0);
     
+    // Item display stuff.
+    this.m_item_box = null; 
+    this.m_item = null;
+    
     this.m_action_counter = 0;
+    
+    this.advanceText();
   }
   
   advanceText()
   {
     // Returns true on good to continue or false when there is 
     // no text to advance to.
+    console.log("Actor.advanceText:action_counter:" + this.m_action_counter);
     if (this.m_textbox.advanceText() == false)
     {
       // We got to the end of the actor dialog, destroy.
@@ -249,6 +263,7 @@ class Actor
     // Check if the first string in the array is our main_characters name or
     // one for the portraits. Make the portrait bigger or smaller or more
     // transparent or not based on this.
+    console.log("dialog_array:name:" + dialog_array[this.m_action_counter][0]);
     if (dialog_array[this.m_action_counter][0] == player_name)
     {
       this.m_actor_sprite.tint = 0xD3D3D3;
@@ -258,20 +273,20 @@ class Actor
     }
     else
     {
-      this.m_actor_sprite.tint = 0xffffff;
+      this.m_actor_sprite.tint = 0xFFFFFF; //0xD3D3D3
       //this.m_actor_sprite.alpha = 1.0;
       //this.m_actor_sprite.width = this.m_actor_sprite_width + (this.m_actor_sprite_width*0.05);
       //this.m_actor_sprite.height = this.m_actor_sprite_height + (this.m_actor_sprite_height*0.05);
     }
     
     // Background, Action, More_text
-    if (this.m_BAM_array[this.m_action_counter][0] != "")
+    if (this.m_BAM_array[this.m_action_counter][0] != "") // Background
     {
       // create the actor_background
       actor_background = game.add.sprite(0,0,this.m_BAM_array[this.m_action_counter][0]);
       background_group.add(actor_background);
     }
-    if (this.m_BAM_array[this.m_action_counter][1] != "")
+    if (this.m_BAM_array[this.m_action_counter][1] != "") // Action
     {
       console.log("ACTION: " + this.m_BAM_array[this.m_action_counter][1]);
       this.m_actor_sprite.animations.stop();
@@ -310,39 +325,30 @@ class Actor
           // check the effect 2
           if (this.triggerEffect(str_array[2]) == false)
           { console.error("Actor:advanceText:B: effect not found?" + str_array[2]); }
-          /*
-          // Check to see if this will work.
-          for (let i = 0; i < str_array.length; i++)
-          { console.log("string : " + str_array[i]); }
           
-          if (str_array[1] == "blaster")
+          // Adding functionality for displaying the item if Effect == "item"
+          if (str_array[2] === "item")
           {
-            this.m_AudioBlaster.play();
+            // display the item box.
+            this.m_item_box = this.m_game.add.sprite(200, 200, 'item_box');
+            // get the item# from sfx and display it.
+            this.m_item = this.m_game.add.sprite(200,200, str_array[1]);
           }
-          else if (str_array[1] == "explosion")
-          {
-            this.m_AudioExplosion.play();
-          }
-          else
-          {
-            console.log("ERROR::Actor:advanceText: unexpected audio: " + str_array[1]);
-          }
-          */
 
       }
       else // The simple form just changing the emotion of the actor.
       {
         if (this.changeActorEmotion(this.m_BAM_array[this.m_action_counter][1]) == false)
         { console.error("Actor:advanceText: Actor Emotion not found?" + 
-          this.m_BAM_array[this.m_action_counter][1]); }
+          this.m_BAM_array[this.m_action_counter][1]); 
+        }
+      }
     }
-
-    }
-    if (this.m_BAM_array[this.m_action_counter][2] != "")
+    if (this.m_BAM_array[this.m_action_counter][2] != "") // MORE text
     {
       // Load the m_more_text thing here.
     }
-    this.m_action_counter += 1;
+    //this.m_action_counter += 1;
     
     return true;
   }
@@ -440,7 +446,7 @@ class Actor
         // This would play the animation.
         this.m_effectSwipeRight.animations.play('run');
         break;
-      case "moveLeft":
+      case "moveLeft": case "item":
         this.m_actor_sprite.x = this.m_left_pos_x;
         break;
       case "moveRight":
@@ -448,11 +454,62 @@ class Actor
         break;
       case "moveCenter":
         this.m_actor_sprite.x = this.m_center_pos_x;
+        break;
       default:
         return false;
     }
     
     return true;
+  }
+  
+  /*
+    Displaying text if the more_text_array actually has more text within
+    the array_BAM.
+    returns true on success and false on failure.
+  */
+  moreText()
+  {
+    console.log("Actor:moreText:this.m_action_counter:" + this.m_action_counter-1);
+    console.log("Actor:moreText:this.m_BAM_array.length:" + this.m_BAM_array.length);
+    // If we are outside the bounds don't even try.
+    if (this.m_action_counter > (this.m_BAM_array.length))
+    { return false; }
+    
+    console.log("Actor:moreText[i][more_text?]: " + this.m_BAM_array[this.m_action_counter][2]);
+
+    if (this.m_BAM_array[this.m_action_counter][2] != "")
+    {
+      console.log("Actor:moreText: Valid more_text detected.");
+        return this.m_textbox.moreText(this.m_BAM_array[this.m_action_counter][2]);
+    }
+    return false;
+  }
+  
+  /*
+  Putting this generic function to eliminate a race condition between
+  moreText and advanceText as advanceText was incrementing counter and
+  would fuck up moreText position.
+  */
+  spacebarPressed()
+  {
+    // Take out item and item_box if they are present.
+    if (this.m_item_box != null)
+    {
+      this.m_item_box.destroy();
+      this.m_item.destroy();
+    }
+    
+    this.m_action_counter += 1;
+    return (this.advanceText());
+  }
+  
+  /*
+    Small function to facilitate the saving feature by returning the 
+    current dialog_array position.
+  */
+  getCurrentDialogIndex()
+  {
+    return this.m_action_counter;
   }
   
   destroy()
@@ -463,6 +520,7 @@ class Actor
     actor_background.destroy();
     this.m_actions_array.length = 0;
     this.m_actor_sprite.destroy();
+    this.m_space_button_sprite.destroy();
   }
 }
 
@@ -491,6 +549,7 @@ var button_right = new Button();
 var button_up = new Button();
 var button_down = new Button();
 var button_space = new Button();
+var button_enter = new Button();
 
 
 /*
@@ -533,6 +592,7 @@ function resolveActorSprite(string_in)
 */
 function parseTextCache(name, mode)
 {
+  console.log("parseTextCache:Start!");
   let error_str = "ERROR::parseTextCache:";
   if (!testVarValidity(mode, 'number', 0,3,error_str))
   { console.error(" " + mode + " is not a 1 or 2. Invalid Mode."); return; }
@@ -556,7 +616,8 @@ function parseTextCache(name, mode)
   var str = "";
   var array = [];
   let more_text_flag = false;
-  var more_text_name = "";
+  let more_text_valid = false;
+  var more_text_string = "";
   let background_flag = false;
   var background_name = "";
   let action_flag = false;
@@ -577,7 +638,18 @@ function parseTextCache(name, mode)
         // FOR THE ACTIONS.
         array_temp_BAM.push(background_name);
         array_temp_BAM.push(action_name);
-        array_temp_BAM.push(more_text_name);
+        
+        // If we added to the more text field push array else ""
+        if (more_text_valid == true)
+        {
+          array_temp_BAM.push(more_text_array);
+        }
+        else 
+        {
+          array_temp_BAM.push(more_text_string);
+          //more_text_array.push(more_text_string);
+        }
+        more_text_valid = false;
         
         //console.log("parseTextFile # hit array_temp_BAM.length: " + array_temp_BAM.length);
         //console.log("B: " + array_temp_BAM[0] + " A: " + array_temp_BAM[1]);
@@ -587,12 +659,22 @@ function parseTextCache(name, mode)
         
         background_name = "";
         action_name = "";
-        more_text_name = "";
-        
+        more_text_string = "";
+
         break;
       case '\n': // '\n' A newline so a new string.
-        array.push(str);
-        str = "";
+        if (more_text_flag == true)
+        {
+          more_text_valid = true;
+          console.log("parseTextCache:\n:more_string: " + more_text_string);
+          more_text_array.push(more_text_string);
+          more_text_string = "";
+        }
+        else
+        {
+          array.push(str);
+          str = "";
+        }
         break;
       case '@': // @ Emotion so update the emotion
         // update the actor_actions_array here.
@@ -625,8 +707,8 @@ function parseTextCache(name, mode)
       default:
         if (more_text_flag == true)
         {
-          //console.log("more_text_name: " + more_text_name);
-          more_text_name += text[i];
+          //console.log("more_text_string: " + more_text_string);
+          more_text_string += text[i];
         }
         else if (background_flag == true)
         {
@@ -644,6 +726,8 @@ function parseTextCache(name, mode)
         }
     }
   }
+  
+  console.log("parseTextCache:Stop!");
   return array_BAM;
   /*
   if (more_text_name == "")
@@ -655,6 +739,101 @@ function parseTextCache(name, mode)
     return more_text_name;
   }
   */
+}
+
+/*
+  This function will present to the user a decision of yes or no,
+  and returns the result to the caller.
+  Either returns true or false.
+*/
+class binaryChoice
+{
+  constructor(game, x, y, str)
+  {
+    this.m_game = game;
+    this.m_x = x;
+    this.m_y = y;
+    this.m_str = str;
+    this.m_cursor_pos = 0;
+    this.m_cursor_y = 100;
+    this.m_cursor_1_x = 100;
+    this.m_cursor_2_x = 400;
+    
+    // generate the box.
+    this.m_text_box = this.m_game.add.sprite(0, this.m_game.height/2, 'textbox');
+    // generate the text.
+    this.m_text = this.m_game.add.text(10, 
+        10 + this.m_game.height/2, 
+        this.m_str, {fontSize: '16px', fill: '#000'});
+    this.m_text_yes = this.m_game.add.text(this.m_cursor_1_x-25, this.m_game.height/2+100, 
+      "Yes", {fontSize: '16px', fill: '#000'})
+    this.m_text_no  = this.m_game.add.text(this.m_cursor_2_x-25, this.m_game.height/2+100, 
+      "No", {fontSize: '16px', fill: '#000'})
+    // generate the icon.
+    this.m_cursor_sprite = this.m_game.add.sprite(this.m_cursor_1_x,
+      this.m_game.height/2+100, 'cursor');
+    this.m_cursor_sprite.animations.add('idle', [0,1,2], 30, true);
+    this.m_cursor_sprite.play('idle');
+  }
+  
+  moveCursor()
+  {
+    if (this.m_cursor_pos == 1)
+    {
+      this.m_cursor_pos = 0;
+      this.m_cursor_sprite.x = this.m_cursor_1_x;
+    }
+    else
+    {
+      this.m_cursor_pos = 1;
+      this.m_cursor_sprite.x = this.m_cursor_2_x;
+    }
+    console.log("binaryChoice:moveCursor:cursor_pos: " + this.m_cursor_pos);
+  }
+  
+  select()
+  {
+    this.destroy();
+    console.log("binaryChoice: " + this.m_cursor_pos);
+    
+    if (this.m_cursor_pos == 0)
+    {
+      return true;
+    }
+    else 
+    {
+      return false;
+    }
+  }
+  
+  destroy()
+  {
+    // destroy textbox, text, cursor.
+    this.m_cursor_sprite.animations.stop();
+    this.m_cursor_sprite.destroy();
+    this.m_text.text = "";
+    this.m_text_yes.text = "";
+    this.m_text_no.text = "";
+    this.m_text.destroy();
+    this.m_text_yes.destroy();
+    this.m_text_no.destroy();
+    this.m_text_box.destroy();
+  }
+}
+
+// Strips off the non-alpha characters.
+function stripAndReturnString(str)
+{
+  //var str = "";
+  for (var i = 0; i < str.length; i++)
+  {
+    if (str[i] == '_')
+    {
+      break;
+    }
+  }
+  str = str.substring(0,i);
+  return str;
 }
 
 var gameState = {
@@ -711,6 +890,7 @@ var gameState = {
               }
               else
               {
+                console.log("Pushing onto actor_order_array: " + str);
                 actor_order_array.push(str);
                 str = "";
               }
@@ -729,10 +909,12 @@ var gameState = {
         
         // Creating the Actor
         actor = new Actor(game, "Entry Text", "Exit Text", "Nindo", 
-          actor_order_array[0]+ '_1', dialog_array, 
-          'sano');
+          actor_order_array[0], dialog_array, 'sano');
+          //actor_order_array[0]+ '_1', dialog_array, 'sano');
+          
   
         space_key = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+        enter_key = game.input.keyboard.addKey(Phaser.Keyboard.ENTER);
         
         // Putting a button in here to test things.
         var reset_button = game.add.button(500, 20, 'button_reset', null, this,
@@ -763,69 +945,156 @@ var gameState = {
 
   update() 
   {
- 
-  //console.log("gameState:update"); 
-  if (cursors.left.isDown)
-  {
-    if (button_left.getState() == false)
+    if (cursors.left.isDown)
     {
-      button_left.updateState(true);
-    }
-  }
-  else if (cursors.right.isDown)
-  {
-    if (button_right.getState() == false)
-    {
-      button_right.updateState(true);
-    }
-  }
-  else if (cursors.up.isDown)
-  {
-    if (button_up.getState() == false)
-    {
-      button_up.updateState(true);
-    }
-  }
-  else if (cursors.down.isDown)
-  {
-    if (button_down.getState() == false)
-    {
-      button_down.updateState(true);
-    }
-  }
-  else if (space_key != null && space_key.isDown)
-  {
-    if (button_space.getState() == false)
-    {
-      button_space.updateState(true);
-      if (actor != null && actor.advanceText() == false)
+      if (button_left.getState() == false)
       {
-        // We got to the end of dialog for the current actor
-        // and must get a new actor from actor_order_array.
-        actor_order_index += 1;
-        if (actor_order_index < actor_order_array.length)
+        button_left.updateState(true);
+        if (message_box_choice != null)
+          { message_box_choice.moveCursor(); }
+      }
+    }
+    else if (cursors.right.isDown)
+    {
+      if (button_right.getState() == false)
+      {
+        button_right.updateState(true);
+        if (message_box_choice != null)
+        { message_box_choice.moveCursor(); }
+      }
+    }
+    else if (cursors.up.isDown)
+    {
+      if (button_up.getState() == false)
+      {
+        button_up.updateState(true);
+        
+        // Check if the next actor_order_array has 
+        // a MORE in the actor_order_array[actor_order_index]
+        // if it does then generate the actor obj.
+        if (actor != null)
         {
-          actor = new Actor(game, "En", "Ex", "Bl", 
-            actor_order_array[actor_order_index]+ '_1', dialog_array, 
-            resolveActorSprite(actor_order_array[actor_order_index]));
+          // We ask the actor to display text from the more_text_array
+          // if here is any text within that.
+          let result = actor.moreText();
+          console.log("Game:update:UP:actor result: " + result);
+        }
+      }
+    }
+    else if (cursors.down.isDown)
+    {
+      if (button_down.getState() == false)
+      {
+        button_down.updateState(true);
+      }
+    }
+    else if (space_key != null && space_key.isDown)
+    {
+      if (button_space.getState() == false)
+      {
+        button_space.updateState(true);
+      
+        if (message_box_choice != null)
+        { 
+          let result = message_box_choice.select(); 
+        
+          if (result == true)
+          {
+            // We take the first path and thus must eliminate the 
+            // entry on the actor_order_array after it. +2
+            actor_order_array.splice(actor_order_index+2, 1);
+          }
+          else
+          {
+            // eliminate the actor_order person closest +1
+            actor_order_array.splice(actor_order_index+1, 1);
+          }
+          message_box_choice = null;
+          //actor_order_index += 1;
+        
+          for (let i = 0; i < actor_order_array.length; i++)
+          { console.log(" " + actor_order_array[i]); }
+        
+          //button_space.updateState(false);
+          // probably have to make a function to generate the actor HERE.
+        }
+        else if (actor != null && actor.spacebarPressed() == false)
+        {
+          // We got to the end of dialog for the current actor
+          // and must get a new actor from actor_order_array.
+          actor_order_index += 1;
+          if (actor_order_index < actor_order_array.length)
+          {
+            // grab str and rip off non-alpha
+            scriptfile_substr = actor_order_array[actor_order_index];
+          
+            /*
+            for (var i = 0; i < str.length; i++)
+            {
+              // count until we get to '_'
+              if (str[i] == '_')
+              {
+                break;
+              }
+            }
+            str = str.substring(0, i);
+            */
+            
+            scriptfile_substr = stripAndReturnString(scriptfile_substr);
+            console.log("str now: " + scriptfile_substr);
+          
+            if (scriptfile_substr == "CHOICE")
+            {
+              // We have a choice here, parse and present.
+              parseTextCache(actor_order_array[actor_order_index],1);
+              message_box_choice = new binaryChoice(game, 0, 200, dialog_array[0]);
+            }
+            else
+            {
+              actor = new Actor(game, "En", "Ex", "Bl", 
+                //actor_order_array[actor_order_index]+ '_1', dialog_array,
+                actor_order_array[actor_order_index], dialog_array,  
+                resolveActorSprite(scriptfile_substr));
+            }
+          }
+          else
+          {
+            actor = null;
+          }
+        }
+      }
+    }
+    else if (enter_key != null && enter_key.isDown)
+    {
+      if (button_enter.getState() == false)
+      {
+        button_enter.updateState(true);
+        
+        if (getNumberOfScreens() == 0)
+        {
+          // Here we would create the OptionsScreen
+          pushScreen(new OptionsScreen(game));
         }
         else
         {
-          actor = null;
+          // Destroy the screen
+          //options_screen.destroy();
+          //options_screen = null;
+          clearScreens();
         }
-      
       }
     }
+    else
+    {
+      button_left.updateState(false);
+      button_right.updateState(false);
+      button_up.updateState(false);
+      button_down.updateState(false);
+      button_space.updateState(false);
+      button_enter.updateState(false);
+    }
   }
-  else
-  {
-    button_left.updateState(false);
-    button_right.updateState(false);
-    button_up.updateState(false);
-    button_down.updateState(false);
-    button_space.updateState(false);
-  }
-  }
+  
 }
 
 // States

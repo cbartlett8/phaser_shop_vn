@@ -129,7 +129,9 @@ class GenericTextBox
     this.m_text_array.push(this.m_text_4);
     this.m_text_array.push(this.m_text_5);
     
-    console.log("Successfully created GenericTextBox obj");
+    console.log("Successfully created GenericTextBox obj:advancingText");
+    
+    //this.advanceText();
 	}
 
     /*
@@ -173,31 +175,95 @@ class GenericTextBox
                     this.m_text_array[i].text = this.m_dialog_array[this.m_dialog_array_current_position][i];
                 }
             }
+            
+            // Look for and highlight any text.
+            for (let i = 0; i < this.m_text_array.length; i++)
+            {
+              this.highlightWords(this.m_text_array[i].text, '^', i); 
+            }
         }
         this.m_dialog_array_current_position += 1;
         return true;
+    }
+    
+    /* 
+     * function returns two ints in a array, specifing where in the string we
+    // need to addColor.
+    * @param str string - The string to examine.
+    * @param char character - The flag character we are looking for.
+    * @param index int = The index of this.m_text_array we are indexing into.
+    */
+    highlightWords(str, char, index)
+    {
+      console.log("GenericTextBox:highlightWords:str:" + str);
+      let num_1 = null;
+      let num_2 = null;
+      
+      for (let i = 0; i < str.length; i++)
+      {
+        if (char == str[i])
+        {
+            if ( num_1 == null) 
+            { num_1 = i; }
+            else 
+            { num_2 = i; }
+        }
+      }
+      
+      if ( num_1 != null && num_2 != null)
+      {
+        // Remove the characters from the text.
+        this.m_text_array[index].text.replace("^", "");
+        // Highlight characters/word.
+        this.m_text_array[index].addColor('#ff0000', num_1-1);
+        this.m_text_array[index].addColor('#000000', num_2);
+      }
+      
     }
 
 
     /*
     Displays the text from the different array of more_text_array.
+    * param text_array [] - The text array to draw to the screen.
     @return true or false 
     */
-    moreText()
+    moreText(text_array)
     {
+      console.log("genericTextBox.moreText:text_array: " + text_array);
       // Check if more_text_array exists.
-      if (more_text_array == 'undefined')
+      if (text_array == 'undefined')
       {
-        return;
+        return false;
       }
-      if (more_text_array.length = 0)
+      if (text_array.length == 0)
       {
-        return;
+        return false;
       }
       
-      for (var i = 0; i < this.m_dialog_array[this.m_dialog_array_current_position].length; i++)
+      this.clearText();
+      
+      //if (more_text_array[this.m_dialog_array_current_position].length == 1)
+      //{
+        //return false;
+      //}
+      this.m_text_array[1].text = text_array;
+      /*for (let i = 0; i < text_array.length; i++)
       {
-        this.m_text_array[i].text = more_text_array[0][i];
+        this.m_text_array[i].text = text_array[i];
+      }
+      */
+      return true;
+    }
+    
+    /*
+     * Function just zeros out the text lines except the name.
+     * Thats it.
+     */
+    clearText()
+    {
+      for (let i = 1; i < this.m_text_array.length; i++)
+      {
+        this.m_text_array[i].text = "";
       }
     }
 

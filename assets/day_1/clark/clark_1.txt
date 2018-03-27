@@ -1,7 +1,8 @@
-#Clark
+Clark
 Alright *, I know you didn't ask for 
 this assignment but this position has
 to be manned.
+{sad}
 #*
 Yeah, yeah...
 [actor_back]
@@ -13,9 +14,10 @@ being in the same room as them in the
 {Bangry_explosion_moveLeft_}
 #Clark
 past. Look I'll make sure you can get the
-best position just as soon as R&D gets 
+best position just as soon as ^R&D^ gets 
 the automated system working.
 {happy}
+<Yeah, the automated system that is the MORE dialog here.>
 #*
 Thanks Clark.
 Additional Text Here.

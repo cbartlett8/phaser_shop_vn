@@ -1,4 +1,4 @@
-#Irene
+Irene
 This is a script
 for the person
 named Irene.
