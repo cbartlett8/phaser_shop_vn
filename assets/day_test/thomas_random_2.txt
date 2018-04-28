@@ -1,0 +1,13 @@
+*
+SOoo running optimally my Black Knight?
+{idle}
+#blk_knight
+You still believe that I'm a atomoton?
+{idle}
+#*
+Of course!
+{happy}
+#blk_knight
+Then I can't wait to see your Father
+{happy}
+#

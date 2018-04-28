@@ -1,0 +1,12 @@
+*
+Now, Now Black Knight are you functioning properly?
+{idle}
+#blk_knight
+Umm...yeah, you know I'm not an atamaton, right?
+{aggrevated}
+#*
+My Father said your are an atamaton, therefore; you are a atamaton.
+#blk_knight
+Ugh...(Mumbling) I remember the streets of Embar, 
+the feverish spices of Clotin (Mumbling)
+#

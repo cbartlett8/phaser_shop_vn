@@ -1,0 +1,40 @@
+Black Knight
+So...If you want to know more ingredients lists or recipies I'll need 
+you to relase my bonds.
+{idle}
+[atelier]
+#* 
+HA! I would believe that IF my father didn't say that you were a danger.
+#Black Knight
+(SIGH) Listen, you WANT the recipe and the only way you're gonna get it 
+is if I lose a piece of armor.
+#Black Knight
+Remember I can't lie to you, a small part of your fathers curse on me remember?
+#*
+What my father says is sacrament but since time is literally of the essence.
+[releasing_1_armor]
+#
+[releasing_2_armor]
+#*
+There! Now about that recipie?
+[atelier]
+#Black Knight
+Um...one sec
+[Blk_Knight_Villiage_1]
+#Black Knight
+I'm getting a few...images.
+[atelier]
+{confused}
+#*
+I'll spare you a moment.
+#Black Knight
+I'm in a field, A special lady by my side...
+[Blk_Knight_Villiage_2]
+#*
+Black Knight.
+BLACK KNIGHT!! 
+Its been TEN minutes. The Recipe. NOW!
+[atelier]
+#Black Knight
+What!? Sure its...
+#

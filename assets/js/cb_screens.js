@@ -55,6 +55,12 @@ function getNumberOfScreens()
   return screen_stack.length;
 }
 
+// function to call for an update to the current screen.
+function updateTopScreen()
+{
+  screen_stack[screen_stack.length - 1].update();
+}
+
 /*
  * Generic buttons with a custom label as I didnt want to make a 
  * bunch of buttons for everything!!!
@@ -80,11 +86,12 @@ class clickableTextButton
     
     this.m_text_x = x + 32;
     this.m_text_y = y + 24;
+    this.m_text_array = [];
     this.m_button = game.add.button(x, y, 'button_generic',
       null, this, 1,0,2,1); // overFrame, outFrame, downFrame, upFrame
-    this.m_text = game.add.text(this.m_text_x, 
+    this.m_text_array.push( game.add.text(this.m_text_x, 
         this.m_text_y,
-        text, {fontSize: '16px', fill: '#000'});
+        text, {fontSize: '16px', fill: '#000'}) );
     this.m_callback = callback;
     this.m_type = type;
     this.m_call_para = call_para;
@@ -115,20 +122,66 @@ class clickableTextButton
   hide()
   {
     this.m_button.inputEnabled = false;
-    this.m_text.alpha = 0.1
+    //this.m_text.alpha = 0.1
+    for (let i = 0; i < this.m_text_array.length; i++)
+    {
+        this.m_text_array[i].alpha = 0.1;
+    }
     this.m_button.alpha = 0.1
   }
   unhide()
   {
     this.m_button.inputEnabled = true;
-    this.m_text.alpha = 1.0;
+    //this.m_text.alpha = 1.0;
+    for (let i = 0; i < this.m_text_array.length; i++)
+    {
+        this.m_text_array[i].alpha = 1.0;
+    }
     this.m_button.alpha = 1.0;
   }
+  
+  // Functions to change the size of the button.
+  changeWidth(new_w)
+  {
+    this.m_button.width = new_w;
+  }
+  changeHeight(new_h)
+  {
+    this.m_button.height = new_h;
+  }
+  
+  // function to add text to the button, mostly used for save and load
+  // buttons. The strings should be generated one line at a time. Sent
+  // to this function one at a time as it should place the string 
+  // on the next line.
+  addText(string)
+  {
+    if (this.m_text_array.length == 0)
+    { return; }
+    
+    let y = this.m_text_array[this.m_text_array.length-1].y;
+    let x = this.m_text_array[this.m_text_array.length-1].x;
+    this.m_text_array.push( game.add.text(x, 
+        y+16,
+        string, {fontSize: '16px', fill: '#000'}) );
+  }
+  // helper function that destroys all strings EXCEPT the first one.
+  clearText()
+  {
+    for (let i = 1; i < this.m_text_array.length; i++)
+    {
+      this.m_text_array[i].text = "";
+      this.m_text_array[i].destroy();
+    }
+    this.m_text_array.length = 1;
+  } 
   destroy()
   {
     //this.m_text.text = "";
     //this.m_text = null;
-    this.m_text.destroy();
+    //this.m_text.destroy();
+    for (let i = 0; i < this.m_text_array.length; i++)
+    { this.m_text_array[i].destroy(); }
     this.m_button.destroy();
   }
 }
@@ -152,7 +205,7 @@ function isLocalSupported()
 
 /*
  This function will just create the save data for the most important
- properties right now. VERY BETA! 3-24-18
+ properties right now. VERY BETA! 3-24-18 Mostly WORKING 3-30-18
  @param slot int - The save "slot"
  @return true on success, false on failure.
 */
@@ -160,10 +213,23 @@ function saveSlot(slot)
 {
   if (isLocalSupported() == false) { return false; }
   console.log("Trying to SAVE and it is supported.");
-  localStorage.setItem("slot_" + slot + "_player_name",player_name);
+  localStorage.setItem("slot_" + slot + "_player_name", player_name);
+  
   localStorage.setItem("slot_" + slot + "_day_completed", JSON.stringify(1));
-  localStorage.setItem("slot_" + slot + "_order_completed", JSON.stringify(1));
-  localStorage.setItem("slot_" + slot + "_dialog_completed", JSON.stringify(2));
+  localStorage.setItem("slot_" + slot + "_order_completed", 
+    JSON.stringify(actor_order_index));
+  
+  if (actor != null)
+  {
+    localStorage.setItem("slot_" + slot + "_dialog_completed", 
+      JSON.stringify(actor.getCurrentDialogIndex()));
+  }
+  else
+  {
+    localStorage.setItem("slot_" + slot + "_dialog_completed", JSON.stringify(0));
+  }
+  
+  updateTopScreen();
 }
 
 // Same as save just needs the slot number.
@@ -175,6 +241,23 @@ function loadSlot(slot)
   let day = parseInt(localStorage.getItem("slot_" + slot + "_day_completed"));
   let order = parseInt(localStorage.getItem("slot_" + slot + "_order_completed"));
   let dialog = parseInt(localStorage.getItem("slot_" + slot + "_dialog_completed"));
+  
+  // Set the day.
+  
+  // Set the actor to be generated.
+  actor_order_index = order;
+  
+  if (actor != null)
+  {
+    // destroy the old actor
+    actor.destroy();
+  }
+  
+  // Create a new actor object.
+  actor = new Actor(game, "En", "Ex", "Bl", 
+    actor_order_array[actor_order_index], dialog_array,  
+    resolveActorSprite(scriptfile_substr));
+  
   console.log("Load INFO: Name: " + player_name + " day: " + day + 
     " order: " + order + " dialog: " + dialog);
 }
@@ -188,6 +271,21 @@ function deleteSlot(slot)
   localStorage.setItem("slot_" + slot + "_day_completed", null);
   localStorage.setItem("slot_" + slot + "_order_completed", null);
   localStorage.setItem("slot_" + slot + "_dialog_completed", null);
+  
+  updateTopScreen();
+}
+
+// Function for grabbing the values from a save slot.
+// @return array of values 
+function peekSlot(slot)
+{
+  if (isLocalSupported() == false) { return false; }
+  var array = [];
+  array.push("Name: " + localStorage.getItem("slot_" + slot + "_player_name"));
+  array.push("Day#: " + parseInt(localStorage.getItem("slot_" + slot + "_day_completed")));
+  array.push("Order Pos: " + parseInt(localStorage.getItem("slot_" + slot + "_order_completed")));
+  array.push("Dialog Pos: " + parseInt(localStorage.getItem("slot_" + slot + "_dialog_completed")));
+  return array;
 }
 
 /*
@@ -205,21 +303,34 @@ class OptionsScreen
     // Generate the background
     this.m_game_obj = game_obj;
     this.m_margin = 25;
+    this.m_sprite_height = 64;
+    this.m_sprite_width = 128;
     this.m_background = this.m_game_obj.add.sprite(0,0, 'options_screen_back');
     this.m_name = "OptionsScreen";
     this.m_buttons = [];
     
     // Generate the buttons
-    this.m_buttons.push(new clickableTextButton(this.m_margin, 50, 
+    this.m_buttons.push(new clickableTextButton(this.m_game_obj.width * 0.25 - this.m_sprite_width, 
+      this.m_game_obj.height * 0.25 - this.m_sprite_height, 
       "Save Game", pushScreen, 1, SaveScreen));
-    this.m_buttons.push(new clickableTextButton(this.m_game_obj.width - 200, 50,
+    this.m_buttons.push(new clickableTextButton(this.m_game_obj.width * 0.75 - this.m_sprite_width, 
+      this.m_game_obj.height * 0.25 - this.m_sprite_height,
       "Load Game", pushScreen, 1, LoadScreen));
-    this.m_buttons.push(new clickableTextButton(this.m_game_obj.width / 2, 100,
+    this.m_buttons.push(new clickableTextButton(this.m_game_obj.width * 0.5 - this.m_sprite_width, 
+      this.m_game_obj.height * 0.35 - this.m_sprite_height,
       "Relationships", pushScreen, 1, SaveScreen));
-    this.m_buttons.push(new clickableTextButton(this.m_game_obj.width / 2, 200, 
+    this.m_buttons.push(new clickableTextButton(this.m_game_obj.width * 0.5 - this.m_sprite_width, 
+      this.m_game_obj.height * 0.5 - this.m_sprite_height, 
       "Button Config", pushScreen, 1, SaveScreen));
-    this.m_buttons.push(new clickableTextButton(this.m_game_obj.width / 2, 300, 
+    this.m_buttons.push(new clickableTextButton(this.m_game_obj.width * 0.5 - this.m_sprite_width, 
+      this.m_game_obj.height * 0.7 - this.m_sprite_height, 
       "Return", popScreen, 0, "unusued"));
+    this.m_buttons.push(new clickableTextButton(this.m_game_obj.width * 0.75 - this.m_sprite_width, 
+      this.m_game_obj.height * 0.9 - this.m_sprite_height, 
+      "Speaker_Down", popScreen, 0, "un-used"));
+    this.m_buttons.push(new clickableTextButton(this.m_game_obj.width * 0.25 - this.m_sprite_width, 
+      this.m_game_obj.height * 0.9 - this.m_sprite_height, 
+      "Speaker_Up", popScreen, 0, "un-used"));
   }
   
   hide()
@@ -267,9 +378,9 @@ class SaveScreen
     
     this.m_game_obj = game_obj;
     this.m_margin = 25;
-    this.m_row_1_y = 100;
+    this.m_row_1_y = 50;
     this.m_row_2_y = 200;
-    this.m_row_3_y = 300;
+    this.m_row_3_y = 350;
     this.m_name = "SaveScreen";
     this.m_buttons = [];
     
@@ -281,6 +392,16 @@ class SaveScreen
       "Save Slot #2", saveSlot, 2, 2));
     this.m_buttons.push(new clickableTextButton(this.m_margin, this.m_row_3_y, 
       "Save Slot #3", saveSlot, 2, 3));
+    for (let i = 0; i < this.m_buttons.length; i++)
+    {
+      this.m_buttons[i].changeWidth(600);
+      this.m_buttons[i].changeHeight(175);
+      let info_array = peekSlot(i+1);
+      for (let j = 0; j < info_array.length; j++)
+      {
+        this.m_buttons[i].addText(info_array[j]);
+      }
+    }
       
     this.m_buttons.push(new clickableTextButton(this.m_game_obj.width - this.m_margin - 128, 
       this.m_row_1_y, "Delete Save", deleteSlot, 2, 1));
@@ -294,9 +415,22 @@ class SaveScreen
     
   }
   
-  updateSlot(slot_num)
+  update()
   {
-    
+    for (let i = 0; i < 3; i++)
+    {
+      // peek the three slots again
+      // clearText from teh buttons
+      // addtext from the arrays.
+      let info_array = peekSlot(i+1);
+      
+      // CAUTION: DIFFERENT BUTTON ARRANGEMENT COULD FUCK US.
+      this.m_buttons[i].clearText();
+      for (let j = 0; j < info_array.length; j++)
+      {
+        this.m_buttons[i].addText(info_array[j]);
+      }
+    }
   }
   
   getName()

@@ -1,0 +1,92 @@
+*
+Sister?
+{questioning}
+#Marion
+Hmm...sorry I'm busy at the moment, could you come back later?
+{apathy}
+#*
+Oh sister I truly would love to allow you to wollow away but 
+the current situation requires your participation.
+{snarky}
+#Marion
+Is this about the commotion outside? Burglers or some such?
+#*
+No dear, it seems as though it is of a Apocolyptic scale of situation, therefore
+I need your help and quickly!
+{desperate}
+#Marion
+...So this involves the demi-lord?
+{question}
+#*
+Yes, but he's not the main concern here, it the man who is trying to-
+#Marion
+I can't help you.
+{depression}
+#*
+I beg your pardon
+{anger}
+#Marion
+I'm sorry but I can't help you. I can't fight those things again.
+#*
+Oh come now Mari-
+#Marion
+My name isn't Marion anymore I told you all that before, Marion is a coward's name.
+{AngryDepressed}
+#*
+So where are we then?
+{idle}
+#Marion
+I simply can't.
+{depressed}
+#*
+But you must-
+#Marion
+Look at these hands!
+This is from just discussing these things, these...
+[Marion_Shaking_hands]
+#Marion
+STUPID RESPONSIABILITES!!!
+[Marion_Room]
+{angry}
+#*
+Marion...
+{sad}
+#Marion
+Responsiabilities, that what father said about the mission, 
+our responsibilities.
+{sad}
+#*
+Marion?
+#Marion
+Stop saying that.
+{idle}
+#*
+Mari-?
+#Marion
+Stop saying that name!
+{angry}
+#Marion
+I'm not Marion! My name is Lady Magical: Defender of Love. 
+[FullScreenOfMarion?]
+#Marion
+I'm someone who doesn't run away.
+[marion_room]
+{sad}
+#*
+I understand Ma- I mean Lady Magical. With your permission I shall take my leave.
+{Idle_nothing_nothing_}
+#Marion
+Wait, what  is it I "can" help you with?
+{depressed}
+#*
+Well if you wish to be a help I need something that can distract Mother 
+enough to take her key to Father's room.
+{happy}
+#Marion (Lady Magical)
+Oh thats easy, go to the cellar and bring her a bottle of Shato Sequine 
+wine. She couldn't possibly refuse a request then.
+{happy}
+#Player
+The Cellar? Fine I shall go. Have a good life or whatnot Lady Magical.
+{depressed}
+#

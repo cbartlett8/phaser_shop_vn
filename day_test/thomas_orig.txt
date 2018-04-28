@@ -1,0 +1,37 @@
+#Blk. Knight
+So...If you want to know more ingredients lists or recipies I'll need you to relase my bonds.
+{Breluctant_nothing_nothing_}
+#Player 
+HA! I would believe that IF my father didn't say that you were a danger.
+{Blaughing_nothing_nothing_}
+#Blk. Knight
+*sigh* Listen, you WANT the recipie and the only way you're gonna get it is if I lose a piece.
+#Blk. Knight
+Remember I can't lie to you, a small part of your fathers curse on me remember?
+#Player
+What my father says is sacrament but since time is litteritarielly of the essence.
+[Bbackground="releasing_1_armor.png"]
+[Bbackground="releasing_2_armor.png"]
+[Bbackground="Hallway.png"]
+#Player
+There! Now about that recipie?
+{Bserious_nothing_nothing_}
+#Blk. Knight
+Um...one sec
+[Bbackground="Villiage of the giants_cinematic_Grey.png"]
+[Bbackground="Hallway.png"]
+#Blk. Knight
+I'm getting a few...images
+{Bconfused_nothing_nothing}
+#Player
+I'll spare you a moment.
+#Blk. Knight
+I'm in a field, A special lady by my side...
+[Bbackground="Villiage of the giants_pov_woman.png"]
+[Bbackground="Hallway.png"
+#Player
+Black Knight...BLACK KNIGHT!! Its been TEN minutes. The Recipe Now.
+{Birritated_nothing_nothing}
+#Blk Knight
+Sure its...
+#

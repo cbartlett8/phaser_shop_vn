@@ -42,6 +42,15 @@ var script_loader = null;
 var loading_text = null;
 var background = "";
 var actor_background = "";
+var relationship = [];
+
+// Relationship stuff.
+for (let i = 0; i < 10; i++)
+{ relationship.push(0); }
+function incrementRelationship(index, amount)
+{ console.log("IncRel: index: " + index + " amount: " + amount); relationship[index] += amount; }
+function decrementRelationship(index, amount)
+{ relationship[index] -= amount; }
 
 
 var scriptfile_substr = "";
@@ -52,7 +61,12 @@ var message_box_choice = null;
 function loadStart()
 {
   console.log("loadStart Starting...");
+  // Backgrounds
   game.load.image('sky', 'assets/sky.png');
+  game.load.image('atelier', 'assets/atelier_room.png');
+  game.load.image('releasing_armor_1', 'assets/removing_armor_1.png');
+  game.load.image('releasing_armor_2', 'assets/removing_armor_2.png');
+  
   game.load.image('actor_back', 'assets/actor_back.png');
   game.load.image('ground', 'assets/platform.png');
   game.load.image('star', 'assets/star.png');
@@ -61,18 +75,29 @@ function loadStart()
   game.load.image('save_screen_back', 'assets/save_screen_back.png');
   game.load.image('load_screen_back', 'assets/load_screen_back.png');
   game.load.image('options_screen_back', 'assets/options_screen_back.png');
+  
+  // Hud Elements
   game.load.spritesheet('cursor', 'assets/cursor.png', 32, 32);
   game.load.spritesheet('space_button_sprite', 'assets/space.png', 64, 64);
   game.load.spritesheet('button_reset', 'assets/button_reset_sheet.png', 128,64);
+  game.load.spritesheet('button_tab', 'assets/button_tab_sheet.png', 128, 64);
   game.load.spritesheet('button_generic', 'assets/button_generic_sheet.png', 128, 64);
+  
+  // Characters
   game.load.spritesheet('minako', 'assets/minako_sheet.png', 200, 329);
   game.load.spritesheet('reila', 'assets/reila_sheet.png', 200, 329);
   game.load.spritesheet('sano', 'assets/sano_sheet.png', 200, 400);
+  game.load.spritesheet('blackKnight', 'assets/armored_man_sheet.png', 300, 270);
+
+  // Effects
   game.load.spritesheet('dude', 'assets/dude.png', 32, 48);
   game.load.spritesheet('effectSwipeRight', 
     'assets/effect_swipe_black_sheet_proto.png', 800, 600);
+    
+  // Audio
   game.load.audio('AudioExplosion', 'assets/sfx/explosion.mp3');
   game.load.audio('AudioBlaster', 'assets/sfx/blaster.mp3');
+  
 }
 
 function fileComplete(progress, cacheKey, success, totalLoaded, totalFiles)
@@ -98,7 +123,7 @@ var bootState = {
   {
     console.log("Boot State.");
     // loading the text files.
-    game.load.text('order',   'assets/day_1/order.txt');
+    //game.load.text('order',   'assets/day_1/order.txt');
     game.load.text('clark_1', 'assets/day_1/clark/clark_1.txt');
     game.load.text('clark_2', 'assets/day_1/clark/clark_2.txt');
     game.load.text('clark_3', 'assets/day_1/clark/clark_3.txt');
@@ -107,6 +132,16 @@ var bootState = {
     game.load.text('maggy_2', 'assets/day_1/maggy/maggy_2.txt');
     game.load.text('CHOICE_1', 'assets/day_1/CHOICE/CHOICE_1.txt');
     game.load.text('test', 'assets/day_1/maggy/test.txt');
+    
+    // From the test day file.
+    game.load.text('order',   'assets/day_test/order.txt');
+    player_name = "Atelier Girl";
+    game.load.text('blackKnight_mod', 'assets/day_test/blackKnight_mod.txt');
+    game.load.text('thomas_portrait', 'assets/day_test/thomas_portrait.txt');
+    game.load.text('thomas_random_1', 'assets/day_test/thomas_random_1.txt');
+    game.load.text('thomas_random_2', 'assets/day_test/thomas_random_2.txt');
+    game.load.text('thomas_sister', 'assets/day_test/thomas_sister.txt');
+    game.load.text('thomas_statue', 'assets/day_test/thomas_statue.txt');
     
     //game.state.start('load');
   },
@@ -283,8 +318,32 @@ class Actor
     if (this.m_BAM_array[this.m_action_counter][0] != "") // Background
     {
       // create the actor_background
-      actor_background = game.add.sprite(0,0,this.m_BAM_array[this.m_action_counter][0]);
-      background_group.add(actor_background);
+      for (let i = 0; i < this.m_BAM_array[this.m_action_counter].length; i++)
+      {
+        console.log("advanceText():background["+ this.m_action_counter + "][" + i + "]:" + 
+          this.m_BAM_array[this.m_action_counter][i]);
+      }
+      
+      if (this.m_BAM_array[this.m_action_counter][0][0] === 'A')
+      {
+        console.log("Identified Animated Background.");
+        var str = this.m_BAM_array[this.m_action_counter][1].substr(1);
+        this.array = [];
+        var array = this.breakStringIntoParts(str, this.array);
+        
+        console.log("Actor:background:length:" + array.length);
+        for (let i = 0; i < array.length; i++)
+        {
+          console.log("Actor:background:" + array[i]);
+        }
+        
+        // Here we animate the background.
+      }
+      else 
+      {
+        actor_background = game.add.sprite(0,0,this.m_BAM_array[this.m_action_counter][0]);
+        background_group.add(actor_background);
+      }
     }
     if (this.m_BAM_array[this.m_action_counter][1] != "") // Action
     {
@@ -315,8 +374,27 @@ class Actor
           }
           
           // now check the emotion of the character/actor 0
-          if (this.changeActorEmotion(str_array[0]) == false)
+          let result = this.changeActorEmotion(str_array[0]);
+          if ( result == -1)
           { console.error("Actor:advanceText:B: Actor Emotion not found?" + str_array[0]); }
+          else
+          {
+            if (result != 40) // We have a special relationship command.
+            {
+              if (str_array[1].toLowerCase() == "pos")
+              {
+                incrementRelationship(result, (str_array[2]));
+              }
+              else if (str_array[1].toLowerCase() == "neg")
+              {
+                decrementRelationship(result, parseInt(str_array[2]));
+              }
+              else
+              {
+                console.error("ERROR::Value string_array[1] not Pos OR Neg:" + str_array[1]);
+              }
+            }
+          }
           
           // check the sfx/music for the box 1
           if (this.playBackgroundSfx(str_array[1]) == false)
@@ -336,7 +414,7 @@ class Actor
           }
 
       }
-      else // The simple form just changing the emotion of the actor.
+      else // The simple form is just for changing the emotion of the actor.
       {
         if (this.changeActorEmotion(this.m_BAM_array[this.m_action_counter][1]) == false)
         { console.error("Actor:advanceText: Actor Emotion not found?" + 
@@ -352,6 +430,30 @@ class Actor
     
     return true;
   }
+  
+  
+  /*
+    This function breaks the given string that has the special character 
+    '_' and stores the strings into the array it returns.
+    @param str string - The string we are breaking up.
+    @param array [] - The array we are populating.
+    @return the same array passed in.
+  */
+  breakStringIntoParts(str, array)
+  {
+    // start index.
+    let start_ind = 0;
+          
+    for (let i = 0; i < str.length; i++)
+    {
+       if (str[i] == '_')
+       {
+          array.push(str.substring(start_ind, i));
+          start_ind = i+1;
+       }
+    }
+    return array;
+  } 
   
   // Changes the emotion of the current actor sprite based on 
   // the string sent in.
@@ -387,12 +489,40 @@ class Actor
         case "nothing":
           break;
         default:
+          let result = this.resolveActor(str);
+          if (result != -1)
+          {
+            return result;
+          }
+          
           console.error("ERROR::Actor:advanceText:actions outside bound." +
             this.m_BAM_array[this.m_action_counter][1]);
           this.m_actor_sprite.animations.play('idle');
-          return false;
+          return -1;
     }
-    return true;
+    return 40;
+  }
+  
+  /*
+    Special call from the text in which we change the relationship numbers
+    if the text resolves to an actors name.
+  */
+  resolveActor(str)
+  {
+    switch(str)
+    {
+      case "Clark":
+        return 0;
+        break;
+      case "Irene":
+        return 1;
+        break;
+      case "Maggy":
+        return 2;
+        break;
+      default:
+        return -1;
+    }
   }
   
   // playBackgroundMusic(str)
@@ -578,6 +708,8 @@ function resolveActorSprite(string_in)
   { return 'minako'; }
   else if (string_in === 'maggy')
   { return 'reila'; }
+  else if (string_in === 'blackKnight')
+  { return 'blackKnight'; }
   else
   { return 'dude'; }
 }
@@ -909,7 +1041,7 @@ var gameState = {
         
         // Creating the Actor
         actor = new Actor(game, "Entry Text", "Exit Text", "Nindo", 
-          actor_order_array[0], dialog_array, 'sano');
+          actor_order_array[0], dialog_array, 'blackKnight');
           //actor_order_array[0]+ '_1', dialog_array, 'sano');
           
   
